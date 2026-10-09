@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+   <!-- The scriptable head over the same Core as the window. Ships as a self-contained
+        single-file exe named after the app id (kof22-app.exe), so the coverage package
+        name is the assembly name, not the project name. -->
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>net10.0</TargetFramework>
+      <AssemblyName>kof22-app</AssemblyName>
+      <RootNamespace>Kof22App.Cli</RootNamespace>
+      <InvariantGlobalization>true</InvariantGlobalization>
+      <ApplicationIcon>..\Kof22App\Assets\Brand\app.ico</ApplicationIcon>
+   </PropertyGroup>
+
+   <ItemGroup>
+      <ProjectReference Include="..\Kof22App.Core\Kof22App.Core.csproj" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <InternalsVisibleTo Include="Kof22App.Cli.Tests" />
+   </ItemGroup>
+
+   <ItemGroup>
+      <!-- The app's own namespaces are global usings: their sort position against other
+           usings depends on the app's name, which the template replaces. -->
+      <Using Include="Kof22App.Core" />
+      <Using Include="Kof22App.Core.Greetings" />
+   </ItemGroup>
+
+</Project>
