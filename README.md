@@ -2,7 +2,7 @@
 
 A KofTwentyTwo Windows desktop application.
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/KofTwentyTwo/Kof22App/badge)](https://scorecard.dev/viewer/?uri=github.com/KofTwentyTwo/Kof22App)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/KofTwentyTwo/windows-app-template/badge)](https://scorecard.dev/viewer/?uri=github.com/KofTwentyTwo/windows-app-template)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <!--#if (templateSource) -->
@@ -15,12 +15,12 @@ A KofTwentyTwo Windows desktop application.
 | --- | --- |
 | **Tier** | Product ([scope](https://github.com/KofTwentyTwo/standards/blob/main/policies/README.md#scope)) |
 | **Standards** | Adopting [KofTwentyTwo standards](https://github.com/KofTwentyTwo/standards) (pre-v1.0); built from the KofTwentyTwo Windows app template |
-| **Latest release** | [Releases](https://github.com/KofTwentyTwo/Kof22App/releases/latest) |
+| **Latest release** | [Releases](https://github.com/KofTwentyTwo/windows-app-template/releases/latest) |
 
 ## Install
 
 Download `kof22-app-stable-Setup.exe` from the
-[latest release](https://github.com/KofTwentyTwo/Kof22App/releases/latest) and run it. It
+[latest release](https://github.com/KofTwentyTwo/windows-app-template/releases/latest) and run it. It
 installs per user (no administrator rights needed) and updates itself in place from
 **Help → Check for updates**. `kof22-app-stable-Portable.zip` is a portable build that
 does not self-update.
@@ -80,7 +80,7 @@ signed by the KofTwentyTwo release workflow:
 (Get-FileHash .\kof22-app-stable-Setup.exe -Algorithm SHA256).Hash   # compare to SHA256SUMS
 
 # Origin: built by the KofTwentyTwo release workflow from this repository
-gh attestation verify .\kof22-app-stable-Setup.exe --repo KofTwentyTwo/Kof22App --signer-repo KofTwentyTwo/standards
+gh attestation verify .\kof22-app-stable-Setup.exe --repo KofTwentyTwo/windows-app-template --signer-repo KofTwentyTwo/standards
 
 # Publisher: Authenticode signature (once code signing is enabled; see SECURITY.md)
 Get-AuthenticodeSignature .\kof22-app-stable-Setup.exe | Format-List Status, SignerCertificate

@@ -6,7 +6,7 @@ body:
     attributes:
       value: >-
         Security problem? Do not file it here; use the private
-        [vulnerability report](https://github.com/KofTwentyTwo/Kof22App/security/advisories/new).
+        [vulnerability report](https://github.com/KofTwentyTwo/windows-app-template/security/advisories/new).
   - type: input
     id: version
     attributes:

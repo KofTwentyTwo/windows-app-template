@@ -58,7 +58,7 @@
           { "type": "ref", "value": "name" }
         ]
       },
-      "replaces": "KofTwentyTwo/Kof22App"
+      "replaces": "KofTwentyTwo/windows-app-template"
     },
     "ownerHandle": {
       "type": "generated",

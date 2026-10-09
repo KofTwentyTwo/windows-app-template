@@ -8,7 +8,7 @@ short version of what they ask of a contribution.
 
 For anything beyond a small fix, open an issue first so the approach can be agreed
 before you invest time. Questions and proposals are welcome in
-[Issues](https://github.com/KofTwentyTwo/Kof22App/issues).
+[Issues](https://github.com/KofTwentyTwo/windows-app-template/issues).
 
 ## Setup
 

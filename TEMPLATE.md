@@ -65,7 +65,7 @@ dotnet new uninstall .
 Placeholders the template replaces, so keep them exactly as written in the source:
 `Kof22App` (the name), `kof22-app` (the app id), `Kof22 App` (the display name),
 `A KofTwentyTwo Windows desktop application.` (the description), `James Maes` (the
-author), `KofTwentyTwo/Kof22App` and `@KofTwentyTwo` (the owner), and `2026` after
+author), `KofTwentyTwo/windows-app-template` (the owner and repository, which becomes `<owner>/<name>`) and `@KofTwentyTwo` (the owner), and `2026` after
 `Copyright (c) ` (the year). Content that only applies with the command line is in
 `<!--#if (cli) -->` blocks (Markdown, XML) or in the no-CLI copies of `ci.yml` and
 `release.yml` under `.template.config/no-cli/`.

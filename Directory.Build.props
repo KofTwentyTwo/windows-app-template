@@ -63,7 +63,7 @@
       <Authors>James Maes</Authors>
       <Product>Kof22 App</Product>
       <Copyright>Copyright (c) 2026 James Maes</Copyright>
-      <RepositoryUrl>https://github.com/KofTwentyTwo/Kof22App</RepositoryUrl>
+      <RepositoryUrl>https://github.com/KofTwentyTwo/windows-app-template</RepositoryUrl>
       <RepositoryType>git</RepositoryType>
    </PropertyGroup>
 

@@ -24,7 +24,7 @@ public static class AppIdentity
       DisplayName = "Kof22 App",
       Tagline = "Built on the KofTwentyTwo Windows app template",
       Description = "A KofTwentyTwo Windows desktop application.",
-      RepositoryUrl = new Uri("https://github.com/KofTwentyTwo/Kof22App"),
+      RepositoryUrl = new Uri("https://github.com/KofTwentyTwo/windows-app-template"),
       Author = "James Maes",
       Copyright = "Copyright (c) 2026 James Maes",
       // Keep the gradient in step with the mark (regenerate both with AppKit's BrandTool).

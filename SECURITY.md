@@ -5,7 +5,7 @@
 **Do not open a public issue for a security problem.**
 
 Report it privately through GitHub's
-[private vulnerability reporting](https://github.com/KofTwentyTwo/Kof22App/security/advisories/new)
+[private vulnerability reporting](https://github.com/KofTwentyTwo/windows-app-template/security/advisories/new)
 (the repository's **Security** tab, then **Report a vulnerability**). That is the only
 reporting channel.
 
@@ -56,4 +56,4 @@ with `SHA256SUMS` and `gh attestation verify` as described in the
 ## Published vulnerabilities
 
 Fixed vulnerabilities are published as
-[GitHub Security Advisories](https://github.com/KofTwentyTwo/Kof22App/security/advisories).
+[GitHub Security Advisories](https://github.com/KofTwentyTwo/windows-app-template/security/advisories).

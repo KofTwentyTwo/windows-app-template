@@ -58,7 +58,7 @@ releases.
 ## Cutting a release
 
 1. Make sure `main` is green and the conformance check passes:
-   `pwsh ../standards/tools/Test-RepoConformance.ps1 -Repository KofTwentyTwo/Kof22App -LocalPath .`
+   `pwsh ../standards/tools/Test-RepoConformance.ps1 -Repository KofTwentyTwo/windows-app-template -LocalPath .`
 2. For a minor or major release, open a release checklist issue from the standards
    template and complete it (security assessment, threat model review, scan results).
 3. Tag `main` and push the tag:
