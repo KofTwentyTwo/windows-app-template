@@ -1,0 +1,88 @@
+# Windows desktop application release for a KofTwentyTwo repository (K22-CI-30,
+# K22-REL-*, architecture/windows-desktop-app.md).
+# Pushing a protected v* tag builds, tests, publishes, packs with Velopack, generates
+# SBOMs, attests, and publishes the GitHub release through the shared reusable workflow.
+#
+# Tags: v1.2.3 -> Velopack channel `stable`; v1.2.3-beta.1 -> channel `dev` (prerelease).
+#
+# One-time owner setup:
+#   - Environment `release` (Settings -> Environments) with a deployment rule that allows
+#     only tags matching v*.
+#   - Code signing (when exception EX-0002 closes): add the environment variables
+#     AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, TRUSTED_SIGNING_ENDPOINT,
+#     TRUSTED_SIGNING_ACCOUNT, TRUSTED_SIGNING_PROFILE (a federated credential for this
+#     repository's `release` environment on the Azure app registration), then set
+#     `sign: true` below.
+#   - winget (optional, stable releases only): the package must already exist in
+#     microsoft/winget-pkgs. Submit it once by hand with
+#       wingetcreate new <Setup.exe URL of the first stable release>
+#     then add a WINGET_TOKEN secret (a fine-grained token that can fork and open pull
+#     requests on public repositories, expiring within 90 days, K22-SEC-03) to the
+#     `release` environment, and set the repository variable WINGET_PACKAGE_ID.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: KofTwentyTwo/standards/.github/workflows/release-velopack.yml@dfdc23b18ea89d2d4e48a93e6fe0db6f729c3c30 # feat/velopack-release (KofTwentyTwo/standards#5)
+    permissions:
+      contents: write      # create and publish the GitHub release
+      id-token: write      # sign attestations; Azure OIDC when signing
+      attestations: write  # store attestations
+    with:
+      solution: Kof22App.slnx
+      app-project: src/Kof22App/Kof22App.csproj
+      app-id: kof22-app
+      main-exe: Kof22App.exe
+      icon: src/Kof22App/Assets/Brand/app.ico
+      platform: x64
+      runtime: win-x64
+      coverage-packages: Kof22App.Core
+      test-projects: |
+        tests/Kof22App.Core.Tests
+      sign: false # exception EX-0002: true once the Azure Trusted Signing identity is validated
+
+  # winget lives here, not in the shared workflow, because its token belongs to this
+  # repository's `release` environment. It runs only for stable releases, and only when
+  # the WINGET_PACKAGE_ID variable is set (after the manual first submission).
+  winget:
+    name: winget
+    needs: release
+    if: needs.release.outputs.prerelease == 'false' && vars.WINGET_PACKAGE_ID != ''
+    runs-on: windows-latest
+    timeout-minutes: 15
+    environment: release
+    permissions: {}
+    steps:
+      - name: Submit winget manifest update
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          WINGET_PACKAGE_ID: ${{ vars.WINGET_PACKAGE_ID }}
+          K22_VERSION: ${{ needs.release.outputs.version }}
+          SETUP_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ needs.release.outputs.setup }}
+        run: |
+          if (-not $env:WINGET_TOKEN)
+          {
+             Write-Output '::notice::No WINGET_TOKEN in the release environment; skipping winget.'
+             exit 0
+          }
+          # wingetcreate v1.12.13.0, pinned by URL and verified by SHA-256 before use.
+          $wingetcreate = Join-Path $env:RUNNER_TEMP 'wingetcreate.exe'
+          Invoke-WebRequest -Uri 'https://github.com/microsoft/winget-create/releases/download/v1.12.13.0/wingetcreate.exe' -OutFile $wingetcreate
+          if ((Get-FileHash -LiteralPath $wingetcreate -Algorithm SHA256).Hash -ne '24042BD37915805615E6CF969AC57C6439124C3FE85823327F5F3FB24BD9FFEA')
+          {
+             Write-Output '::error::wingetcreate.exe does not match the pinned SHA-256.'
+             exit 1
+          }
+          & $wingetcreate update $env:WINGET_PACKAGE_ID --urls $env:SETUP_URL --version $env:K22_VERSION --submit --token $env:WINGET_TOKEN

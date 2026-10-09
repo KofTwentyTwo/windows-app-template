@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "James Maes",
+  "classifications": [ "Windows", "Desktop", "WinUI", "KofTwentyTwo" ],
+  "identity": "KofTwentyTwo.Templates.WindowsApp",
+  "groupIdentity": "KofTwentyTwo.Templates.WindowsApp",
+  "name": "KofTwentyTwo Windows app (WinUI 3)",
+  "description": "A complete WinUI 3 desktop app that already meets the KofTwentyTwo standards: AppKit shell (splash, About, activity log, theme, crash net, Velopack self-update), a 100%-covered core, an optional command line, FlaUI UI tests, and the shared CI, security, and SLSA Build L3 release workflows.",
+  "shortName": "k22-winapp",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "sourceName": "Kof22App",
+  "preferNameDirectory": true,
+  "symbols": {
+    "appId": {
+      "type": "parameter",
+      "datatype": "text",
+      "isRequired": true,
+      "replaces": "kof22-app",
+      "description": "Machine id: lowercase letters, digits, and dashes (e.g. contoso-notes). Names the data folder, logs, credentials, CLI executable, and Velopack package. Never change it after the first release."
+    },
+    "displayName": {
+      "type": "parameter",
+      "datatype": "text",
+      "isRequired": true,
+      "replaces": "Kof22 App",
+      "description": "Product name shown in the window title, splash, About, and menus (e.g. \"Contoso Notes\")."
+    },
+    "description": {
+      "type": "parameter",
+      "datatype": "text",
+      "defaultValue": "A KofTwentyTwo Windows desktop application.",
+      "replaces": "A KofTwentyTwo Windows desktop application.",
+      "description": "One-sentence description for the README, About, and the main window."
+    },
+    "authorName": {
+      "type": "parameter",
+      "datatype": "text",
+      "defaultValue": "James Maes",
+      "replaces": "James Maes",
+      "description": "Copyright holder and author shown in credits and license headers."
+    },
+    "owner": {
+      "type": "parameter",
+      "datatype": "text",
+      "defaultValue": "KofTwentyTwo",
+      "description": "GitHub account or organization that will own the repository."
+    },
+    "ownerRepoSlug": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          { "type": "ref", "value": "owner" },
+          { "type": "const", "value": "/" },
+          { "type": "ref", "value": "name" }
+        ]
+      },
+      "replaces": "KofTwentyTwo/Kof22App"
+    },
+    "ownerHandle": {
+      "type": "generated",
+      "generator": "join",
+      "parameters": {
+        "symbols": [
+          { "type": "const", "value": "@" },
+          { "type": "ref", "value": "owner" }
+        ]
+      },
+      "replaces": "@KofTwentyTwo"
+    },
+    "cli": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "true",
+      "description": "Include the command-line head (src/<name>.Cli) and its tests."
+    },
+    "year": {
+      "type": "generated",
+      "generator": "now",
+      "parameters": {
+        "format": "yyyy"
+      },
+      "replaces": "2026",
+      "onlyIf": [ { "after": "Copyright (c) " } ]
+    },
+    "templateSource": {
+      "type": "computed",
+      "value": "false"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            ".template.config/**",
+            "templates/**",
+            "TEMPLATE.md",
+            ".git/**",
+            ".vs/**",
+            "**/bin/**",
+            "**/obj/**",
+            "TestResults/**",
+            "artifacts/**"
+          ]
+        },
+        {
+          "condition": "(!cli)",
+          "exclude": [
+            "src/Kof22App.Cli/**",
+            "tests/Kof22App.Cli.Tests/**",
+            ".github/workflows/ci.yml",
+            ".github/workflows/release.yml"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "./.template.config/no-cli/",
+      "target": "./",
+      "condition": "(!cli)"
+    }
+  ]
+}

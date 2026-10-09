@@ -1,0 +1,29 @@
+# .NET build, test, coverage, and format gates (K22-CI-01, K22-CI-02, K22-TEST-10).
+# Produces the required contexts `ci / build-test`, `ci / format`, and `ci / ui-tests`.
+# The coverage gate holds the UI-free core at 100% line coverage.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    uses: KofTwentyTwo/standards/.github/workflows/dotnet.yml@ae3df7af77e5a97df231a9f53be9d8ed785ddce5 # main (pre-release)
+    permissions:
+      contents: read # check out, build, and test; nothing is written
+    with:
+      solution: Kof22App.slnx
+      platform: x64
+      coverage-packages: Kof22App.Core
+      test-projects: |
+        tests/Kof22App.Core.Tests
+      ui-test-projects: |
+        tests/Kof22App.UiTests

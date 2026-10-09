@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+   <!-- Packs this repository as a `dotnet new` template package
+        (dotnet new install KofTwentyTwo.Templates.WindowsApp). Not part of the app's
+        solution; build it explicitly with `dotnet pack` on this file. -->
+   <PropertyGroup>
+      <PackageType>Template</PackageType>
+      <PackageId>KofTwentyTwo.Templates.WindowsApp</PackageId>
+      <Title>KofTwentyTwo Windows app template</Title>
+      <Description>dotnet new k22-winapp: a WinUI 3 desktop app that already meets the KofTwentyTwo standards (AppKit shell, 100%-covered core, optional CLI, FlaUI tests, shared CI and SLSA Build L3 release workflows).</Description>
+      <PackageTags>dotnet-new;templates;winui;windows;desktop;velopack</PackageTags>
+      <PackageLicenseExpression>MIT</PackageLicenseExpression>
+      <PackageProjectUrl>https://github.com/KofTwentyTwo/windows-app-template</PackageProjectUrl>
+      <TargetFramework>netstandard2.0</TargetFramework>
+      <IsPackable>true</IsPackable>
+      <IncludeContentInPack>true</IncludeContentInPack>
+      <IncludeBuildOutput>false</IncludeBuildOutput>
+      <ContentTargetFolders>content</ContentTargetFolders>
+      <NoDefaultExcludes>true</NoDefaultExcludes>
+      <EnableDefaultItems>false</EnableDefaultItems>
+      <IncludeSymbols>false</IncludeSymbols>
+      <!-- A content-only package: no code, so no analyzers, docs, or lock file. -->
+      <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+      <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+      <GenerateDocumentationFile>false</GenerateDocumentationFile>
+      <!-- NU5128: no lib folder, by design. NU5110/NU5111: build/Assert-Coverage.ps1 is template
+           content that generated repositories run, not a NuGet install script. -->
+      <NoWarn>$(NoWarn);NU5128;NU5110;NU5111</NoWarn>
+   </PropertyGroup>
+
+   <!-- Directory.Build.props adds the analyzer to every project; a content-only package has
+        no code to analyze. -->
+   <ItemGroup>
+      <PackageReference Remove="Meziantou.Analyzer" />
+   </ItemGroup>
+
+   <!-- PackagePath is the content folder only: NuGet appends each file's path relative to
+        the include root. Spelling out the file name breaks files without an extension
+        (LICENSE would be packed as a folder of that name). -->
+   <ItemGroup>
+      <Content Include="..\**\*" Exclude="..\**\bin\**;..\**\obj\**;..\.git\**;..\.vs\**;..\TestResults\**;..\artifacts\**;..\templates\**" PackagePath="content" />
+   </ItemGroup>
+
+</Project>
