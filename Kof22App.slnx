@@ -1,0 +1,25 @@
+<Solution>
+  <Configurations>
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Kof22App/Kof22App.csproj">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+    </Project>
+    <Project Path="src/Kof22App.Core/Kof22App.Core.csproj" />
+    <!--#if (cli) -->
+    <Project Path="src/Kof22App.Cli/Kof22App.Cli.csproj" />
+    <!--#endif -->
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kof22App.Core.Tests/Kof22App.Core.Tests.csproj" />
+    <!--#if (cli) -->
+    <Project Path="tests/Kof22App.Cli.Tests/Kof22App.Cli.Tests.csproj" />
+    <!--#endif -->
+    <Project Path="tests/Kof22App.UiTests/Kof22App.UiTests.csproj" />
+  </Folder>
+</Solution>
