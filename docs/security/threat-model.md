@@ -73,6 +73,7 @@ of the app.
 | T7 | Input | Denial of service | Very long input slows or breaks the UI | Low | Low | Length limits in Core services | Mitigated |
 | T8 | Repository administration | Tampering | Setup weakens existing protections or targets another repository | Low | High | Offline preview; exact public target/admin checks; current-PR checks; refuse conflicting rules and broad release refs; read back settings | Local tests pass; live bootstrap pending |
 | T9 | PR review workflow | Elevation of privilege | Untrusted PR code runs with a checks write token | Low | High | Comment-triggered workflow executes trusted workflow SHA only; no PR checkout; human current-SHA acknowledgement required | Local tests pass; hosted enforcement pending |
+| T10 | Package-manager distributions | Tampering | Manifest points at wrong bytes or an unsafe executable | Low | High | Stable-only generation; ZIP identity/layout checks; actual SHA256 and provenance verification; exclude helper shims; candidate review before feed publication | Local tests and real archive/schema checks pass; feed lifecycle pending |
 
 ## 7. Accepted risks
 

@@ -44,6 +44,10 @@ The shared workflow (SLSA Build L3: the build definition lives in KofTwentyTwo/s
 The optional `winget` job in `release.yml` then submits the manifest update for stable
 releases.
 
+Optional Scoop/Chocolatey candidate generation supports CLI and GUI portable
+payloads, using final-byte hashes and verified provenance. Follow the
+[distribution presets](distribution.md); no package feed is updated by default.
+
 ## One-time setup (owner)
 
 1. **Environment** `release` (Settings → Environments) with a deployment rule that allows

@@ -114,15 +114,15 @@ jobs:
       - name: Submit winget manifest update
         shell: pwsh
         env:
-          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
           WINGET_PACKAGE_ID: ${{ vars.WINGET_PACKAGE_ID }}
           K22_VERSION: ${{ needs.release.outputs.version }}
           SETUP_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ needs.release.outputs.setup }}
         run: |
-          if (-not $env:WINGET_TOKEN)
+          if (-not $env:WINGET_CREATE_GITHUB_TOKEN)
           {
-             Write-Output '::notice::No WINGET_TOKEN in the release environment; skipping winget.'
-             exit 0
+             Write-Output '::error::WINGET_PACKAGE_ID is configured but WINGET_TOKEN is missing from the release environment.'
+             exit 1
           }
           # wingetcreate v1.12.13.0, pinned by URL and verified by SHA-256 before use.
           $wingetcreate = Join-Path $env:RUNNER_TEMP 'wingetcreate.exe'
@@ -132,4 +132,50 @@ jobs:
              Write-Output '::error::wingetcreate.exe does not match the pinned SHA-256.'
              exit 1
           }
-          & $wingetcreate update $env:WINGET_PACKAGE_ID --urls $env:SETUP_URL --version $env:K22_VERSION --submit --token $env:WINGET_TOKEN
+          & $wingetcreate update $env:WINGET_PACKAGE_ID --urls $env:SETUP_URL --version $env:K22_VERSION --submit
+
+  distribution:
+    name: distribution candidates
+    needs: release
+    if: needs.release.outputs.prerelease == 'false' && (vars.DISTRIBUTION_ARTIFACT == 'portable' || vars.DISTRIBUTION_ARTIFACT == 'cli')
+    runs-on: windows-latest
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout reviewed release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download and verify final stable artifact
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          K22_REPOSITORY: ${{ github.repository }}
+          K22_TAG: ${{ github.ref_name }}
+          K22_VERSION: ${{ needs.release.outputs.version }}
+          K22_KIND: ${{ vars.DISTRIBUTION_ARTIFACT }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $asset = if ($env:K22_KIND -eq 'cli') { "kof22-app-cli-win-x64-$env:K22_VERSION.zip" } else { 'kof22-app-stable-Portable.zip' }
+          New-Item -ItemType Directory -Force -Path artifacts/distribution-input | Out-Null
+          gh release download $env:K22_TAG --repo $env:K22_REPOSITORY --pattern $asset --pattern SHA256SUMS --dir artifacts/distribution-input
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $path = Join-Path 'artifacts/distribution-input' $asset
+          $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+          $line = @(Get-Content artifacts/distribution-input/SHA256SUMS | Where-Object { $_ -match "^[0-9a-fA-F]{64}\s+\*?$([regex]::Escape($asset))$" })
+          if ($line.Count -ne 1 -or $line[0].Substring(0, 64).ToLowerInvariant() -ne $hash) { throw 'Release archive does not match SHA256SUMS.' }
+          gh attestation verify $path --repo $env:K22_REPOSITORY --signer-repo KofTwentyTwo/standards
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./build/New-DistributionManifests.ps1 -Version $env:K22_VERSION -ArtifactPath $path -ArtifactKind $env:K22_KIND
+          $spec = @(Get-ChildItem artifacts/distribution/chocolatey -Recurse -Filter '*.nuspec')
+          if ($spec.Count -ne 1) { throw 'Expected one selected Chocolatey package.' }
+          choco pack $spec[0].FullName --outputdirectory artifacts/distribution
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload candidates for review
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: distribution-candidates
+          path: artifacts/distribution
+          if-no-files-found: error
