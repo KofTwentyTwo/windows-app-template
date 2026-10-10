@@ -27,6 +27,24 @@ Describe 'Offline setup preview location' `
    }
 }
 
+Describe 'Required checks match standalone workflow jobs' `
+{
+   It 'requires the actual check names from both CI and script workflows' `
+   {
+      $plan = Get-GitHubRepositoryPlan -Repository 'Example/Notes'
+      $workflowRoot = Join-Path (Split-Path -Parent $PSScriptRoot) '.github/workflows'
+      foreach($workflow in @('ci.yml', 'scripts.yml'))
+      {
+         $names = @(Select-String -LiteralPath (Join-Path $workflowRoot $workflow) -Pattern '^    name: ')
+         $names.Count | Should -BeGreaterThan 0
+         foreach($name in $names)
+         {
+            $plan.Contexts | Should -Contain $name.Line.Trim().Substring('name: '.Length)
+         }
+      }
+   }
+}
+
 Describe 'Generated repository administration' `
 {
    InModuleScope GitHubRepository `

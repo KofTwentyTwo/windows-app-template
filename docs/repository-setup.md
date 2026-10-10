@@ -47,6 +47,12 @@ $sha = gh pr view BOOTSTRAP_PR_NUMBER --json headRefOid --jq .headRefOid
 ./build/Initialize-GitHubRepository.ps1 -Mode Validate
 ```
 
+The plan uses GitHub's actual job check names: reusable build checks have the
+`ci /` prefix, while standalone checks are `installed-updates`, `powershell` and
+`javascript`. The template source also requires `template`, which exercises both
+generated variants; generated applications have no template-packaging check.
+Never add a workflow-name prefix to standalone job names in required contexts.
+
 The tool verifies the exact public target, `main`, administrator access, absence
 of repository secrets/self-hosted runners, current bootstrap PR SHA and successful
 GitHub Actions checks. It binds required contexts to the observed Actions app ID,

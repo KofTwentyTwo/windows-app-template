@@ -22,7 +22,11 @@ function Get-GitHubRepositoryPlan
    $contexts = @('pr / title', 'pr / dco', 'pr / dependency-review', 'security / secrets',
       'security / sca', 'security / workflows', 'codeql / analyze (csharp)',
       'codeql / analyze (actions)', 'codeql / analyze (javascript-typescript)',
-      'ci / build-test', 'ci / format', 'ci / ui-tests', 'ci / installed-updates', 'scripts / powershell', 'scripts / javascript')
+      'ci / build-test', 'ci / format', 'ci / ui-tests', 'installed-updates', 'powershell', 'javascript')
+   if(Test-Path -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'templates/KofTwentyTwo.Templates.WindowsApp.csproj'))
+   {
+      $contexts += 'template'
+   }
    if($MaintainerCount -eq 1)
    {
       $contexts += 'review / automated'

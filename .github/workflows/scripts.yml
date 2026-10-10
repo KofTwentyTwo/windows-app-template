@@ -51,7 +51,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force
           Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
-          Invoke-ScriptAnalyzer -Path build -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
+          # Analyze each file separately: recursive analysis can crash inside 1.25.0.
+          foreach($script in Get-ChildItem -LiteralPath build -Recurse -File | Where-Object Extension -In '.ps1', '.psm1', '.psd1')
+          {
+             $findings = @(Invoke-ScriptAnalyzer -Path $script.FullName -Settings ./PSScriptAnalyzerSettings.psd1)
+             if($findings.Count -gt 0) { $findings | Format-Table; throw "Script analysis failed: $($script.Name)" }
+          }
       - name: Verify script boundary tests
         shell: pwsh
         run: |
