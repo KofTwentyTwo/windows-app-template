@@ -59,7 +59,7 @@ jobs:
           Install-Module Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force
           Import-Module Pester -RequiredVersion 5.7.1
           $testConfiguration = New-PesterConfiguration
-          $testConfiguration.Run.Path = @('build/Assert-Coverage.Tests.ps1', 'build/GitHubRepository.Tests.ps1', 'build/Distribution.Tests.ps1', 'build/InstalledUpdates.Tests.ps1', 'build/PackageBytes.Tests.ps1')
+          $testConfiguration.Run.Path = @('build/Assert-Coverage.Tests.ps1', 'build/GitHubRepository.Tests.ps1', 'build/Distribution.Tests.ps1', 'build/InstalledUpdates.Tests.ps1', 'build/PackageBytes.Tests.ps1', 'build/ReleaseSigning.Tests.ps1')
           $testConfiguration.Run.Exit = $true
           $testConfiguration.TestResult.Enabled = $true
           $testConfiguration.TestResult.OutputPath = 'TestResults/coverage-gate.xml'

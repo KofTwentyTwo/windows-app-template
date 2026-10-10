@@ -38,7 +38,7 @@ The shared workflow (SLSA Build L3: the build definition lives in KofTwentyTwo/s
 1. Validates strict SemVer and repeats locked restore,
    zero-warning build, unit tests, and the 100% coverage gate.
 2. Publishes the app unpackaged and self-contained (and the single-file command line),
-   signs the binaries when code signing is enabled, and packs them with Velopack: Setup,
+   signs the owned binaries and packs them with Velopack: Setup,
    portable zip, full and delta update packages.
 3. Generates CycloneDX SBOMs, writes `SHA256SUMS`, and attests provenance and SBOMs.
 4. Creates a draft GitHub Release with every asset and generated notes, then publishes
@@ -55,8 +55,10 @@ payloads, using final-byte hashes and verified provenance. Follow the
 
 1. **Environment** `release` (Settings → Environments) with a deployment rule that allows
    only tags matching `v*`.
-2. **Code signing** (when exception EX-0002 closes): the Azure variables listed at the top
-   of `release.yml` on the `release` environment, then `sign: true`.
+2. **Code signing:** complete [the signing configuration](release-signing.md), pin
+   its published reviewed builder, then enable `sign: true` with an explicit
+   owned-file catalog. The preflight blocks unsigned publication and incomplete
+   protected-environment configuration before any release build starts.
 3. **winget** (optional): submit the first stable release by hand with `wingetcreate new`,
    then add `WINGET_TOKEN` to the `release` environment and the repository variable
    `WINGET_PACKAGE_ID`.

@@ -8,11 +8,9 @@
 # One-time owner setup:
 #   - Environment `release` (Settings -> Environments) with a deployment rule that allows
 #     only tags matching v*.
-#   - Code signing (when exception EX-0002 closes): add the environment variables
-#     AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, TRUSTED_SIGNING_ENDPOINT,
-#     TRUSTED_SIGNING_ACCOUNT, TRUSTED_SIGNING_PROFILE (a federated credential for this
-#     repository's `release` environment on the Azure app registration), then set
-#     `sign: true` below.
+#   - Configure verified Azure signing variables and a repository/environment-bound
+#     OIDC identity; pin the published reviewed builder, enable sign and declare
+#     the owned-file catalog. See docs/release-signing.md. Unsigned publication is blocked.
 #   - winget (optional, stable releases only): the package must already exist in
 #     microsoft/winget-pkgs. Submit it once by hand with
 #       wingetcreate new <Setup.exe URL of the first stable release>
@@ -37,6 +35,7 @@ jobs:
     name: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    environment: release
     permissions:
       contents: read
     steps:
@@ -50,6 +49,17 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Require verified release signing configuration
+        shell: pwsh
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ARTIFACT_SIGNING_ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT || vars.TRUSTED_SIGNING_ENDPOINT }}
+          ARTIFACT_SIGNING_ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT || vars.TRUSTED_SIGNING_ACCOUNT }}
+          ARTIFACT_SIGNING_PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE || vars.TRUSTED_SIGNING_PROFILE }}
+          ARTIFACT_SIGNING_SUBJECT: ${{ vars.ARTIFACT_SIGNING_SUBJECT || vars.TRUSTED_SIGNING_SUBJECT }}
+        run: ./build/Assert-ReleaseSigning.ps1
 
   gates:
     needs: verify
@@ -97,7 +107,7 @@ jobs:
         tests/Kof22App.Core.Tests
         tests/Kof22App.Cli.Tests
       cli-project: src/Kof22App.Cli/Kof22App.Cli.csproj
-      sign: false # exception EX-0002: true once the Azure Trusted Signing identity is validated
+      sign: false # Preflight blocks publication until the reviewed signing builder is published and configured.
 
   # winget lives here, not in the shared workflow, because its token belongs to this
   # repository's `release` environment. It runs only for stable releases, and only when
