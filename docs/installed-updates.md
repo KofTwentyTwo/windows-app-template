@@ -59,28 +59,23 @@ Only the probe's executable, assembly and runtime manifests are added to smoke
 packages. Its framework dependency copies never overwrite the application's
 published payload. The probe is never added to production publish output.
 
-A fresh GUI-only run passed both installed upgrades, restart, all four byte gates
-and nineteen UI checks. Each version preserved 532 original publish files in both
-archive formats. CLI attempts also passed every byte gate and the stable upgrade,
-but two installed UI suites timed out on input-driven checks; AppKit issue #23
-tracks that separate acceptance gap. A published-output recurrence showed the
-crash button's clickable point belonged to Windows Terminal despite app keyboard
-focus. Physical input now waits until the app owns an unobscured clickable point,
-then clicks once. Results record process/point observations without unrelated
-window text; crash/greeting failures include isolated app state and logs. The
-guarded seven-case suite passed on the exact failed published executable, but
-hosted CI and complete CLI acceptance remain required.
+Fresh packed-template CLI and GUI-only variants each passed nineteen UI checks,
+all four byte gates and both public AppKit upgrades: stable 0.1.0 to 0.4.0 and
+dev 0.3.0-beta.1 to 0.3.0-beta.2. Each version preserved 532 original publish
+files in both archive formats. Target manifests, application hashes, restart,
+channel isolation, no remaining offer and uninstall cleanup passed. The CLI gate
+also accepts correct versions without SourceLink metadata outside a Git checkout.
+Hosted starter acceptance remains required.
 
-A later CLI run completed both channel upgrades and passed eighteen of nineteen
-UI cases, then timed out on the dev theme menu. Menu/control input now foregrounds
-the app, matching the foundation samples; every physical fallback uses the same
-point-ownership guard. Three focused theme checks and the six-feature sequence
-passed on the exact dev publish payload. Those diagnostic passes do not replace
-a complete fresh-template installed run or erase its retained failure.
-
-Original publish/archive corruption fixtures remain retained under AppKit
-issue #22. These successful staging checks do not establish their cause. Do not attribute
-the corruption to a particular tool or machine component without proof.
+Reserve the desktop during physical input tests. Earlier failures observed other
+apps owning a clickable point despite app keyboard focus. Input now waits for an
+unobscured app-owned point and foregrounds menu/control paths. Results retain
+process/point observations without unrelated window text, plus isolated app logs.
+Keep earlier failed runs as evidence; see AppKit
+[issue #23](https://github.com/KofTwentyTwo/AppKit/issues/23).
+Original corruption fixtures are retained under
+[issue #22](https://github.com/KofTwentyTwo/AppKit/issues/22); successful byte
+checks do not establish the corruption's cause.
 
 ## Evidence and cleanup
 
