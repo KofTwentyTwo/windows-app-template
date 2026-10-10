@@ -69,6 +69,13 @@ window text; crash/greeting failures include isolated app state and logs. The
 guarded seven-case suite passed on the exact failed published executable, but
 hosted CI and complete CLI acceptance remain required.
 
+A later CLI run completed both channel upgrades and passed eighteen of nineteen
+UI cases, then timed out on the dev theme menu. Menu/control input now foregrounds
+the app, matching the foundation samples; every physical fallback uses the same
+point-ownership guard. Three focused theme checks and the six-feature sequence
+passed on the exact dev publish payload. Those diagnostic passes do not replace
+a complete fresh-template installed run or erase its retained failure.
+
 Original publish/archive corruption fixtures remain retained under AppKit
 issue #22. These successful staging checks do not establish their cause. Do not attribute
 the corruption to a particular tool or machine component without proof.

@@ -73,6 +73,9 @@ public sealed class AppSession : IDisposable
    /// <summary>Observed mouse target and focus, retained in timeout diagnostics.</summary>
    public string LastMouseInput { get; private set; } = "No physical input observed.";
 
+   /// <summary>Reports whether the most recent control used UIA or physical input.</summary>
+   public string LastInvocation { get; private set; } = "No control invoked.";
+
 
 
    /// <summary>Text of every log file the app wrote so far.</summary>
@@ -150,6 +153,7 @@ public sealed class AppSession : IDisposable
    /// </summary>
    public void InvokeMenuItem(string menuName, string itemAutomationId)
    {
+      MainWindow.SetForeground();
       AutomationElement menu = WaitFor(
           () => MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.MenuItem).And(cf.ByName(menuName))),
           $"menu '{menuName}'");
@@ -185,9 +189,14 @@ public sealed class AppSession : IDisposable
    /// exception raised during a UIA Invoke back to the automation client instead of
    /// raising Application.UnhandledException, which is what a user's click does.
    /// </summary>
-   public void MouseClickElement(string automationId)
+   public void MouseClickElement(string automationId) => ClickWithMouse(WaitForElement(automationId));
+
+
+
+   /// <summary>Waits for the app to own the clickable point before one physical click.</summary>
+   private void ClickWithMouse(AutomationElement element)
    {
-      AutomationElement element = WaitForElement(automationId);
+      string? automationId = element.Properties.AutomationId.ValueOrDefault;
       element.Focus();
       Wait.UntilInputIsProcessed();
       WaitFor(
@@ -225,6 +234,7 @@ public sealed class AppSession : IDisposable
    /// </summary>
    public void EnterText(string automationId, string text)
    {
+      MainWindow.SetForeground();
       AutomationElement element = WaitForElement(automationId);
       if(element.Patterns.Value.TryGetPattern(out IValuePattern? value) && !value.IsReadOnly.ValueOrDefault)
       {
@@ -242,15 +252,18 @@ public sealed class AppSession : IDisposable
 
 
    /// <summary>Invokes an element through UI Automation, falling back to a mouse click.</summary>
-   private static void Invoke(AutomationElement element)
+   private void Invoke(AutomationElement element)
    {
+      MainWindow.SetForeground();
       if(element.Patterns.Invoke.TryGetPattern(out IInvokePattern? invoke))
       {
+         LastInvocation = $"UIA Invoke: {element.Properties.AutomationId.ValueOrDefault}.";
          invoke.Invoke();
       }
       else
       {
-         element.Click();
+         LastInvocation = $"Mouse fallback: {element.Properties.AutomationId.ValueOrDefault}.";
+         ClickWithMouse(element);
       }
       Wait.UntilInputIsProcessed();
    }

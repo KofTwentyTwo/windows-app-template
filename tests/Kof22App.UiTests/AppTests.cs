@@ -94,9 +94,18 @@ public class AppTests
    {
       using var session = new AppSession();
       session.InvokeMenuItem("View", "ThemeDark");
-      session.WaitFor(
-         () => session.ReadSettings().Contains("\"Theme\": \"Dark\"", StringComparison.Ordinal) ? session.MainWindow : null,
-         "settings.json to record the dark theme");
+      _output.WriteLine(session.LastInvocation);
+      _output.WriteLine(session.LastMouseInput);
+      try
+      {
+         session.WaitFor(
+            () => session.ReadSettings().Contains("\"Theme\": \"Dark\"", StringComparison.Ordinal) ? session.MainWindow : null,
+            "settings.json to record the dark theme");
+      }
+      catch(TimeoutException exception)
+      {
+         throw new TimeoutException($"{exception.Message} {session.LastInvocation} {session.LastMouseInput} Settings: {session.ReadSettings()}. App logs: {session.ReadLogs()}", exception);
+      }
    }
 
 
