@@ -15,6 +15,11 @@ internal sealed class FixtureDownloader(string fixtureDirectory) : IFileDownload
 
 
 
+   /// <summary>Persists request evidence before AppKit's apply operation exits the probe process.</summary>
+   public Action? RequestRecorded { get; set; }
+
+
+
    /// <summary>Copies the exact release package for Velopack's normal hash verification.</summary>
    public Task DownloadFile(string url, string targetFile, Action<int> progress, IDictionary<string, string>? headers = null, double timeout = 30, CancellationToken cancelToken = default)
    {
@@ -42,6 +47,7 @@ internal sealed class FixtureDownloader(string fixtureDirectory) : IFileDownload
    private string Resolve(string url)
    {
       Requests.Add(url);
+      RequestRecorded?.Invoke();
       var uri = new Uri(url);
       string relative;
       if(string.Equals(uri.Host, "api.github.com", StringComparison.Ordinal) && string.Equals(uri.AbsolutePath, "/repos/Example/InstalledProbe/releases", StringComparison.Ordinal))

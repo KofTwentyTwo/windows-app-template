@@ -3,9 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-using System.Reflection;
 using System.Text.Json;
-using KofTwentyTwo.AppKit;
 using KofTwentyTwo.AppKit.Updates;
 using Velopack;
 using Velopack.Locators;
@@ -14,52 +12,64 @@ using Velopack.Sources;
 
 namespace Kof22App.UpdateProbe;
 
-/// <summary>Checks real installed metadata and exercises Velopack with offline GitHub release fixtures.</summary>
+/// <summary>Exercises AppKit's public installed update flow with offline GitHub release fixtures.</summary>
 internal static class Program
 {
    /// <summary>Records the installed channel, update offer and requests; optionally downloads and applies it.</summary>
    private static async Task<int> Main(string[] args)
    {
       VelopackStartup.Run();
-      if(args.Length != 3)
+      if(args.Length != 3 || args[2] is not ("check" or "apply"))
       {
          throw new ArgumentException("Usage: UpdateProbe <fixture-directory> <result-json> <check|apply>", nameof(args));
       }
 
-      bool includePrereleases = BuildVersion.IsPrerelease(Assembly.GetExecutingAssembly());
       var repository = new Uri("https://github.com/Example/InstalledProbe");
       var publicService = new VelopackUpdateService(repository);
       var downloader = new FixtureDownloader(args[0]);
-      var manager = new UpdateManager(new GithubSource(repository.ToString(), accessToken: null, prerelease: includePrereleases, downloader));
-      UpdateInfo? update = manager.IsInstalled ? await manager.CheckForUpdatesAsync().ConfigureAwait(false) : null;
-      string? download = null;
-      if(string.Equals(args[2], "apply", StringComparison.Ordinal) && update is not null)
+      (UpdateManager manager, GithubSource source) = OfflineService.Attach(publicService, downloader);
+      UpdateCheckResult update = await publicService.CheckAsync().ConfigureAwait(false);
+      if(update.Error is not null && (manager.IsInstalled || !string.Equals(update.Error, UpdateText.NotSupported, StringComparison.Ordinal)))
       {
-         await manager.DownloadUpdatesAsync(update).ConfigureAwait(false);
-         download = Path.Combine(VelopackLocator.Current.PackagesDir!, update.TargetFullRelease.FileName);
+         throw new InvalidOperationException(update.Error);
       }
 
-      File.WriteAllText(args[1], JsonSerializer.Serialize(new
+      bool applyCalled = false;
+      string? applyError = null;
+      // Apply exits this process. Record every download request synchronously before that happens.
+      Action saveResult = () => File.WriteAllText(args[1], JsonSerializer.Serialize(new
       {
+         UpdateDriver = "AppKit",
          Installed = manager.IsInstalled,
          AppKitSupported = publicService.IsSupported,
          AppKitVersion = publicService.CurrentVersion,
          Version = manager.CurrentVersion?.ToString(),
          VelopackLocator.Current.Channel,
          manager.IsPortable,
-         IncludePrereleases = includePrereleases,
-         UpdateVersion = update?.TargetFullRelease.Version.ToString(),
-         Download = download,
+         IncludePrereleases = source.Prerelease,
+         UpdateVersion = update.AvailableVersion,
+         AppKitCheckError = update.Error,
+         AppKitApplyCalled = applyCalled,
+         AppKitApplyError = applyError,
          downloader.Requests
       }));
+      downloader.RequestRecorded = saveResult;
+      saveResult();
 
       if(string.Equals(args[2], "apply", StringComparison.Ordinal))
       {
-         if(update is null)
+         if(!update.IsUpdateAvailable)
          {
             throw new InvalidOperationException("No update was offered to apply.");
          }
-         manager.ApplyUpdatesAndRestart(update.TargetFullRelease);
+         applyCalled = true;
+         saveResult();
+         applyError = await publicService.DownloadAndApplyAsync().ConfigureAwait(false);
+         saveResult();
+         if(applyError is not null)
+         {
+            throw new InvalidOperationException(applyError);
+         }
       }
       return 0;
    }

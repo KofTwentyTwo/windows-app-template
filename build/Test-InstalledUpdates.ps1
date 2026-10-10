@@ -101,7 +101,11 @@ function Get-SmokeResult
    param([string]$Exe, [string]$ResultPath, [string]$Mode = 'check')
    Invoke-SmokeProcess -File $Exe -Arguments @($fixtureRoot, $ResultPath, $Mode)
    if(-not (Test-Path -LiteralPath $ResultPath)) { throw 'Probe did not emit a result.' }
-   Get-Content -LiteralPath $ResultPath -Raw | ConvertFrom-Json
+   $result = Get-Content -LiteralPath $ResultPath -Raw | ConvertFrom-Json
+   if($result.UpdateDriver -ne 'AppKit') { throw 'Probe did not use the public AppKit update service.' }
+   if($result.AppKitSupported -and $null -ne $result.AppKitCheckError) { throw 'Public AppKit update check failed.' }
+   if($Mode -eq 'apply' -and (-not $result.AppKitApplyCalled -or $null -ne $result.AppKitApplyError)) { throw 'Public AppKit download/apply failed or was not called.' }
+   $result
 }
 
 <#
@@ -195,6 +199,7 @@ try
          if(-not $before.Installed -or -not $before.AppKitSupported -or $before.IsPortable -or $before.Version -ne $initial.version -or $before.AppKitVersion -ne $initial.version -or $before.Channel -ne $channel -or $before.UpdateVersion -ne $initial.target -or $before.IncludePrereleases -ne ($channel -eq 'dev')) { throw "Incorrect $channel installed update offer." }
          $feeds = @($before.Requests | Where-Object { $_ -match '/releases\.(stable|dev)\.json$' })
          if($feeds.Count -eq 0 -or @($feeds | Where-Object { $_ -notmatch "/releases\.$channel\.json$" }).Count -ne 0) { throw 'Channel feed is missing or a cross-channel feed was requested.' }
+         if(@($before.Requests | Where-Object { $_ -like "*/$($initial.target)/*-full.nupkg" }).Count -ne 1) { throw 'AppKit did not request the target full update package.' }
          $manifest = Join-Path $install 'current/sq.version'
          $deadline = [DateTime]::UtcNow.AddSeconds(90)
          do

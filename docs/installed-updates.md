@@ -33,10 +33,11 @@ without the app PRI, `MainWindow.xaml` fails to load even when Debug UI tests pa
   self-update unavailable when no Velopack manifest/updater exists.
 - Real Setup installs `stable` 0.1.0 and `dev` 0.3.0-beta.1 into separate, bounded
   test directories using one unique test package ID. No shortcuts are requested.
-- The probe uses the production `GithubSource` with a test-only downloader that
-  maps GitHub response URLs to local release assets and refuses other URLs.
-  No locator or update manager is mocked. The installed manifest selects the feed;
-  the entry assembly version selects whether to include prereleases.
+- The probe calls AppKit's public `CheckAsync` and `DownloadAndApplyAsync` methods.
+  A test-only downloader maps GitHub response URLs to local assets and refuses
+  other URLs. Reflection replaces only transport in the pinned AppKit 0.1.0 /
+  Velopack 1.2.161 source, failing closed if its private symbols change. The actual
+  backend, update manager, locator and channel selection remain unchanged.
 - Stable offers only 0.4.0; dev offers only 0.3.0-beta.2, even though the stable
   version is higher. Requests must never fetch the other channel's feed.
 - Velopack downloads and verifies the real package, applies it, and restarts the
@@ -49,10 +50,11 @@ without the app PRI, `MainWindow.xaml` fails to load even when Debug UI tests pa
 - Complete portable bundles preserve their channel and support updates. They differ
   from loose F5/publish output; a `.portable` marker does not disable self-update.
 
-The probe only checks the public AppKit service's installed status/version. Download
-and apply use Velopack directly to inject offline GitHub transport; the AppKit UI's
-live GitHub check/apply flow and public release hosting remain separate acceptance
-items. This does not prove Authenticode signing, installer trust, deltas or ARM64/x86.
+The probe records public check errors and apply calls, including the target asset
+request before apply exits. The harness separately requires the installed target
+manifest, exact application hash and restarted window. The AppKit UI's live GitHub
+check/apply flow and public release hosting remain separate acceptance items. This
+does not prove Authenticode signing, installer trust, deltas or ARM64/x86.
 Only the probe's executable, assembly and runtime manifests are added to smoke
 packages. Its framework dependency copies never overwrite the application's
 published payload. The probe is never added to production publish output.
@@ -82,7 +84,7 @@ the corruption to a particular tool or machine component without proof.
 
 ## Evidence and cleanup
 
-CI requires `ci / installed-updates` and retains JSON results, process/installer logs
+CI requires `installed-updates` and retains JSON results, process/installer logs
 and TRX UI reports. Local evidence stays under a fresh `artifacts/installed-smoke-*`
 directory. Existing output directories are refused so each attempt tests fresh
 packages and results. Packer children receive a private `VELOPACK_TEMP` directory
