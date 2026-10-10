@@ -7,7 +7,8 @@
       <PackageType>Template</PackageType>
       <PackageId>KofTwentyTwo.Templates.WindowsApp</PackageId>
       <Title>KofTwentyTwo Windows app template</Title>
-      <Description>dotnet new k22-winapp: a WinUI 3 desktop app that already meets the KofTwentyTwo standards (AppKit shell, 100%-covered core, optional CLI, FlaUI tests, shared CI and SLSA Build L3 release workflows).</Description>
+      <Description>dotnet new k22-winapp: a WinUI 3 starter built around the KofTwentyTwo standards (AppKit shell, 100%-covered core, optional CLI, FlaUI tests, shared CI and SLSA Build L3 release workflows).</Description>
+      <PackageReadmeFile>TEMPLATE.md</PackageReadmeFile>
       <PackageTags>dotnet-new;templates;winui;windows;desktop;velopack</PackageTags>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
       <PackageProjectUrl>https://github.com/KofTwentyTwo/windows-app-template</PackageProjectUrl>
@@ -19,9 +20,9 @@
       <NoDefaultExcludes>true</NoDefaultExcludes>
       <EnableDefaultItems>false</EnableDefaultItems>
       <IncludeSymbols>false</IncludeSymbols>
-      <!-- A content-only package: no code, so no analyzers, docs, or lock file. -->
+      <!-- A content-only package: no analyzers or API docs; its build lock feeds the shared SBOM builder. -->
       <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-      <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+      <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
       <GenerateDocumentationFile>false</GenerateDocumentationFile>
       <!-- NU5128: no lib folder, by design. NU5110/NU5111: build/Assert-Coverage.ps1 is template
            content that generated repositories run, not a NuGet install script. -->
@@ -38,7 +39,8 @@
         the include root. Spelling out the file name breaks files without an extension
         (LICENSE would be packed as a folder of that name). -->
    <ItemGroup>
-      <Content Include="..\**\*" Exclude="..\**\bin\**;..\**\obj\**;..\.git\**;..\.vs\**;..\TestResults\**;..\artifacts\**;..\templates\**" PackagePath="content" />
+      <None Include="..\TEMPLATE.md" Pack="true" PackagePath="\" />
+      <Content Include="..\**\*" Exclude="..\**\bin\**;..\**\obj\**;..\.git\**;..\.vs\**;..\TestResults\**;..\testResults.xml;..\artifacts\**;..\templates\**" PackagePath="content" />
    </ItemGroup>
 
 </Project>

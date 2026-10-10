@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # WinUI packaged apps need their publish profiles in source control
 !**/Properties/PublishProfiles/*.pubxml
+
+# Default Pester CI report from local runs.
+testResults.xml

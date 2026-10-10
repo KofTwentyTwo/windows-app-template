@@ -9,15 +9,17 @@ on:
   push:
     branches: [main]
 
+  workflow_call:
+
 permissions: {}
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
-    uses: KofTwentyTwo/standards/.github/workflows/dotnet.yml@ae3df7af77e5a97df231a9f53be9d8ed785ddce5 # main (pre-release)
+    uses: KofTwentyTwo/standards/.github/workflows/dotnet.yml@fdf5ed029603c938615a32b1beca3628b8787945 # v0.1.2
     permissions:
       contents: read # check out, build, and test; nothing is written
     with:
@@ -29,3 +31,51 @@ jobs:
         tests/Kof22App.Cli.Tests
       ui-test-projects: |
         tests/Kof22App.UiTests
+  template:
+    name: template
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Pack and smoke test the installable template
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet pack templates/KofTwentyTwo.Templates.WindowsApp.csproj -c Release -p:Version=0.1.0 -p:RestoreLockedMode=true -o artifacts/template
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $hive = Join-Path $env:RUNNER_TEMP 'template-hive'
+          dotnet new install artifacts/template/KofTwentyTwo.Templates.WindowsApp.0.1.0.nupkg --debug:custom-hive $hive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($cli in @('true', 'false'))
+          {
+             $directory = "artifacts/template-probe-$cli"
+             $name = if ($cli -eq 'true') { 'TemplateProbe.WithCli' } else { 'TemplateProbe.NoCli' }
+             dotnet new k22-winapp -n $name --appId "probe-$cli" --displayName "Probe $cli" --cli $cli -o $directory --debug:custom-hive $hive
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             dotnet restore "$directory/$name.slnx" -p:Platform=x64 --locked-mode
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             dotnet build "$directory/$name.slnx" -p:Platform=x64 -warnaserror --no-restore
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             dotnet format "$directory/$name.slnx" --verify-no-changes --severity warn --no-restore
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             dotnet test "$directory/tests/$name.Core.Tests" --no-build --settings "$directory/coverage.runsettings" --collect:'XPlat Code Coverage' --results-directory "$directory/TestResults"
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             if ($cli -eq 'true')
+             {
+                dotnet test "$directory/tests/$name.Cli.Tests" --no-build --settings "$directory/coverage.runsettings" --collect:'XPlat Code Coverage' --results-directory "$directory/TestResults"
+                if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             }
+             & "$directory/build/Assert-Coverage.ps1" -ResultsDirectory "$directory/TestResults"
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+             dotnet test "$directory/tests/$name.UiTests" --no-build
+             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }

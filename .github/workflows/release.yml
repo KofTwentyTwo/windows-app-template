@@ -1,24 +1,18 @@
-# Windows desktop application release for a KofTwentyTwo repository (K22-CI-30,
-# K22-REL-*, architecture/windows-desktop-app.md).
-# Pushing a protected v* tag builds, tests, publishes, packs with Velopack, generates
-# SBOMs, attests, and publishes the GitHub release through the shared reusable workflow.
+# NuGet template package release for a KofTwentyTwo repository (K22-CI-30, K22-REL-*).
+# Copy to .github/workflows/release.yml. Pushing a protected v* tag builds, tests,
+# packs, generates SBOMs, attests, and publishes the GitHub release through the shared
+# reusable workflow, then pushes the packages to nuget.org.
 #
-# Tags: v1.2.3 -> Velopack channel `stable`; v1.2.3-beta.1 -> channel `dev` (prerelease).
-#
-# One-time owner setup:
-#   - Environment `release` (Settings -> Environments) with a deployment rule that allows
-#     only tags matching v*.
-#   - Code signing (when exception EX-0002 closes): add the environment variables
-#     AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, TRUSTED_SIGNING_ENDPOINT,
-#     TRUSTED_SIGNING_ACCOUNT, TRUSTED_SIGNING_PROFILE (a federated credential for this
-#     repository's `release` environment on the Azure app registration), then set
-#     `sign: true` below.
-#   - winget (optional, stable releases only): the package must already exist in
-#     microsoft/winget-pkgs. Submit it once by hand with
-#       wingetcreate new <Setup.exe URL of the first stable release>
-#     then add a WINGET_TOKEN secret (a fine-grained token that can fork and open pull
-#     requests on public repositories, expiring within 90 days, K22-SEC-03) to the
-#     `release` environment, and set the repository variable WINGET_PACKAGE_ID.
+# nuget.org trusted publishing (one-time owner setup, no API key stored anywhere):
+#   nuget.org → your profile → Trusted Publishing → Add policy:
+#     Repository Owner: KofTwentyTwo
+#     Repository:       windows-app-template
+#     Workflow File:    release.yml        (THIS file's name, not the reusable workflow's)
+#     Environment:      release
+#   then set the repository variable NUGET_USER to your nuget.org profile name.
+# The publish job must stay in this file: nuget.org checks that the OIDC token's
+# job_workflow_ref belongs to this repository, which a job inside the reusable
+# workflow (in KofTwentyTwo/standards) can never satisfy.
 name: release
 
 on:
@@ -28,63 +22,105 @@ on:
 
 permissions: {}
 
+# One release at a time, and never cancel one halfway through publishing.
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main and tag history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the tagged commit to be on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Require NuGet publishing configuration
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: test -n "$NUGET_USER"
+
+  gates:
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  security:
+    needs: verify
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  codeql:
+    needs: verify
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  scripts:
+    needs: verify
+    uses: ./.github/workflows/scripts.yml
+    permissions:
+      contents: read
+
   release:
-    uses: KofTwentyTwo/standards/.github/workflows/release-velopack.yml@dfdc23b18ea89d2d4e48a93e6fe0db6f729c3c30 # feat/velopack-release (KofTwentyTwo/standards#5)
+    needs: [verify, gates, security, codeql, scripts]
+    uses: KofTwentyTwo/standards/.github/workflows/release-nuget.yml@fdf5ed029603c938615a32b1beca3628b8787945 # v0.1.2
     permissions:
       contents: write      # create and publish the GitHub release
-      id-token: write      # sign attestations; Azure OIDC when signing
+      id-token: write      # sign attestations
       attestations: write  # store attestations
     with:
-      solution: Kof22App.slnx
-      app-project: src/Kof22App/Kof22App.csproj
-      app-id: kof22-app
-      main-exe: Kof22App.exe
-      icon: src/Kof22App/Assets/Brand/app.ico
+      solution: templates/KofTwentyTwo.Templates.WindowsApp.csproj
       platform: x64
-      runtime: win-x64
-      coverage-packages: Kof22App.Core,kof22-app
-      test-projects: |
-        tests/Kof22App.Core.Tests
-        tests/Kof22App.Cli.Tests
-      cli-project: src/Kof22App.Cli/Kof22App.Cli.csproj
-      sign: false # exception EX-0002: true once the Azure Trusted Signing identity is validated
 
-  # winget lives here, not in the shared workflow, because its token belongs to this
-  # repository's `release` environment. It runs only for stable releases, and only when
-  # the WINGET_PACKAGE_ID variable is set (after the manual first submission).
-  winget:
-    name: winget
+  publish:
+    name: publish (nuget.org)
     needs: release
-    if: needs.release.outputs.prerelease == 'false' && vars.WINGET_PACKAGE_ID != ''
-    runs-on: windows-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: release
-    permissions: {}
+    permissions:
+      contents: read
+      attestations: read # verify the attestations before pushing
+      id-token: write    # trusted publishing token exchange
     steps:
-      - name: Submit winget manifest update
-        shell: pwsh
+      - name: Download packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: packages
+          path: packages
+
+      # Push only bytes that the shared release workflow built and attested.
+      - name: Verify attestations
         env:
-          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
-          WINGET_PACKAGE_ID: ${{ vars.WINGET_PACKAGE_ID }}
-          K22_VERSION: ${{ needs.release.outputs.version }}
-          SETUP_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ needs.release.outputs.setup }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          if (-not $env:WINGET_TOKEN)
-          {
-             Write-Output '::notice::No WINGET_TOKEN in the release environment; skipping winget.'
-             exit 0
-          }
-          # wingetcreate v1.12.13.0, pinned by URL and verified by SHA-256 before use.
-          $wingetcreate = Join-Path $env:RUNNER_TEMP 'wingetcreate.exe'
-          Invoke-WebRequest -Uri 'https://github.com/microsoft/winget-create/releases/download/v1.12.13.0/wingetcreate.exe' -OutFile $wingetcreate
-          if ((Get-FileHash -LiteralPath $wingetcreate -Algorithm SHA256).Hash -ne '24042BD37915805615E6CF969AC57C6439124C3FE85823327F5F3FB24BD9FFEA')
-          {
-             Write-Output '::error::wingetcreate.exe does not match the pinned SHA-256.'
-             exit 1
-          }
-          & $wingetcreate update $env:WINGET_PACKAGE_ID --urls $env:SETUP_URL --version $env:K22_VERSION --submit --token $env:WINGET_TOKEN
+          for package in packages/*.nupkg; do
+            gh attestation verify "$package" --repo "$REPOSITORY" --signer-repo KofTwentyTwo/standards
+          done
+
+      - name: NuGet login (OIDC to a one-hour API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push "packages/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate

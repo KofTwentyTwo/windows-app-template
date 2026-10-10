@@ -5,7 +5,7 @@
   "identity": "KofTwentyTwo.Templates.WindowsApp",
   "groupIdentity": "KofTwentyTwo.Templates.WindowsApp",
   "name": "KofTwentyTwo Windows app (WinUI 3)",
-  "description": "A complete WinUI 3 desktop app that already meets the KofTwentyTwo standards: AppKit shell (splash, About, activity log, theme, crash net, Velopack self-update), a 100%-covered core, an optional command line, FlaUI UI tests, and the shared CI, security, and SLSA Build L3 release workflows.",
+  "description": "A WinUI 3 starter built around the KofTwentyTwo standards: AppKit shell (splash, About, activity log, theme, crash net, Velopack self-update), a 100%-covered core, an optional command line, FlaUI UI tests, and the shared CI, security, and SLSA Build L3 release workflows.",
   "shortName": "k22-winapp",
   "tags": {
     "language": "C#",
@@ -99,6 +99,8 @@
             ".template.config/**",
             "templates/**",
             "TEMPLATE.md",
+            ".github/workflows/ci.yml",
+            ".github/workflows/release.yml",
             ".git/**",
             ".vs/**",
             "**/bin/**",
@@ -117,6 +119,11 @@
           ]
         }
       ]
+    },
+    {
+      "source": "./.template.config/with-cli/",
+      "target": "./",
+      "condition": "(cli)"
     },
     {
       "source": "./.template.config/no-cli/",

@@ -31,6 +31,12 @@ dotnet test tests/Kof22App.UiTests
 
 # Style gate (Kingsrook layout, analyzers, naming)
 dotnet format Kof22App.slnx --verify-no-changes --severity warn --no-restore
+
+# PowerShell tooling gate (install PSScriptAnalyzer 1.25.0 once)
+Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
+Invoke-ScriptAnalyzer -Path build -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
+Import-Module Pester -RequiredVersion 5.7.1
+Invoke-Pester -Path build/Assert-Coverage.Tests.ps1 -CI
 ```
 
 `dotnet format` (without `--verify-no-changes`) fixes layout, `var` use, usings, and
@@ -53,7 +59,7 @@ pre-commit install --hook-type pre-commit --hook-type commit-msg
    for example `feat/export` or `fix/42-splash-never-dismisses`.
 2. Commit with [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
    (`feat: ...`, `fix(settings): ...`). Every commit is **signed** and **signed off**:
-   `git commit -s` (see *Sign-off* below).
+   `git commit -S -s` (see *Sign-off* below).
 3. Open a pull request against `main`. Its title must itself be a Conventional Commit
    header: pull requests are **squash-merged**, so the title becomes the commit message on
    `main`.
@@ -104,6 +110,8 @@ run `git rebase --signoff main` and force-push the branch.
 AI coding tools are welcome. You remain the author: you must understand, test, and be
 able to explain every line you submit, and you sign it off as your own. Note substantial
 AI assistance in the pull request description.
+Include a Co-Authored-By trailer naming the model for significant AI contributions
+(K22-AGENT-40 / K22-AI-02).
 
 ## License
 

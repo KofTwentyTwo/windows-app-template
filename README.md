@@ -8,7 +8,8 @@ A KofTwentyTwo Windows desktop application.
 <!--#if (templateSource) -->
 > **This repository is also the KofTwentyTwo Windows app template.** It is a complete,
 > working app, and `dotnet new k22-winapp` turns it into a new one with your names. See
-> [TEMPLATE.md](TEMPLATE.md).
+> [TEMPLATE.md](TEMPLATE.md). Source releases publish the NuGet template; the
+> installer instructions below describe releases produced by generated app repositories.
 
 <!--#endif -->
 | | |

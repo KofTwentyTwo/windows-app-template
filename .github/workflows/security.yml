@@ -11,15 +11,17 @@ on:
     - cron: "23 6 * * 1"
   workflow_dispatch:
 
+  workflow_call:
+
 permissions: {}
 
 concurrency:
-  group: security-${{ github.ref }}
+  group: security-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   security:
-    uses: KofTwentyTwo/standards/.github/workflows/security.yml@ae3df7af77e5a97df231a9f53be9d8ed785ddce5 # main (pre-release)
+    uses: KofTwentyTwo/standards/.github/workflows/security.yml@fdf5ed029603c938615a32b1beca3628b8787945 # v0.1.2
     permissions:
       contents: read         # check out the code and its history
       security-events: write # upload Trivy and zizmor SARIF to code scanning

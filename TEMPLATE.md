@@ -1,9 +1,7 @@
 # The KofTwentyTwo Windows app template
 
 This repository is a complete, working WinUI 3 app ("Kof22 App") **and** a `dotnet new`
-template that turns it into a new app with your names. Everything a generated app needs
-to meet the [KofTwentyTwo standards](https://github.com/KofTwentyTwo/standards) is already
-here: the AppKit shell, a 100%-covered core, FlaUI UI tests, Kingsrook-style quality gates,
+template that turns it into a new app with your names. The starter provides the code and quality gates used by the [KofTwentyTwo standards](https://github.com/KofTwentyTwo/standards): the AppKit shell, a 100%-covered core, FlaUI UI tests, Kingsrook-style quality gates,
 repository files, and the shared CI, security, and release workflows. It implements the
 [Windows desktop reference architecture](https://github.com/KofTwentyTwo/standards/blob/main/architecture/windows-desktop-app.md).
 
@@ -34,12 +32,18 @@ The copyright year in license headers becomes the current year.
 
 ## After generating
 
+The generator omits dependency lock files. Before the first commit, run the README's
+restore, build, test, coverage and format commands, then commit the resulting
+`packages.lock.json` files. Install the included hooks with
+`pre-commit install --hook-type pre-commit --hook-type commit-msg` after `git init`.
+The generated PowerShell tooling gate uses PSScriptAnalyzer 1.25.0.
+
 1. Create the GitHub repository (public, Product tier), push `main`, and apply the
    [repository standard's](https://github.com/KofTwentyTwo/standards/blob/main/standards/repository.md)
    settings and rulesets, with these required checks: `pr / title`, `pr / dco`,
    `pr / dependency-review`, `security / secrets`, `security / sca`,
    `security / workflows`, `codeql / analyze (csharp)`, `codeql / analyze (actions)`,
-   `ci / build-test`, `ci / format`, `ci / ui-tests`.
+   `ci / build-test`, `ci / format`, `ci / ui-tests`, `scripts / powershell`.
 2. Create the `release` environment limited to `v*` tags, and list the repository in the
    [standards repository inventory](https://github.com/KofTwentyTwo/standards/blob/main/MAINTAINERS.md#repositories)
    (`K22-REPO-42`; the conformance checker fails until it is listed).
@@ -67,8 +71,22 @@ Placeholders the template replaces, so keep them exactly as written in the sourc
 `A KofTwentyTwo Windows desktop application.` (the description), `James Maes` (the
 author), `KofTwentyTwo/windows-app-template` (the owner and repository, which becomes `<owner>/<name>`) and `@KofTwentyTwo` (the owner), and `2026` after
 `Copyright (c) ` (the year). Content that only applies with the command line is in
-`<!--#if (cli) -->` blocks (Markdown, XML) or in the no-CLI copies of `ci.yml` and
-`release.yml` under `.template.config/no-cli/`.
+`<!--#if (cli) -->` blocks (Markdown, XML) or in the app workflow copies under `.template.config/with-cli/` and `.template.config/no-cli/`.
 
 `templates/KofTwentyTwo.Templates.WindowsApp.csproj` packs the template as a NuGet
 package (`dotnet pack templates/KofTwentyTwo.Templates.WindowsApp.csproj`).
+
+## Publishing this template
+
+This source repository publishes `KofTwentyTwo.Templates.WindowsApp` on protected
+`v*` tags using the shared NuGet builder. Generated applications use separate
+Velopack workflows with stable/dev channels. Source CI installs the packed template
+and exercises both CLI variants, including build, format, coverage and UI tests.
+
+Before the first publication, configure the protected repository and release
+settings, register it in the standards inventory, and set `NUGET_USER`. The owner
+must save a NuGet trusted-publishing policy for owner `KofTwentyTwo`, repository
+`windows-app-template`, workflow `release.yml`, environment `release`, and package
+`KofTwentyTwo.Templates.WindowsApp`. Publication is pending until these steps and
+live CI/attestation verification are complete. Do not claim certification from
+successful local tests.

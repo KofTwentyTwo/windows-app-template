@@ -33,8 +33,53 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main and tag history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the tagged commit to be on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+  gates:
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  security:
+    needs: verify
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  codeql:
+    needs: verify
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  scripts:
+    needs: verify
+    uses: ./.github/workflows/scripts.yml
+    permissions:
+      contents: read
+
   release:
-    uses: KofTwentyTwo/standards/.github/workflows/release-velopack.yml@dfdc23b18ea89d2d4e48a93e6fe0db6f729c3c30 # feat/velopack-release (KofTwentyTwo/standards#5)
+    needs: [verify, gates, security, codeql, scripts]
+    uses: KofTwentyTwo/standards/.github/workflows/release-velopack.yml@fdf5ed029603c938615a32b1beca3628b8787945 # v0.1.2
     permissions:
       contents: write      # create and publish the GitHub release
       id-token: write      # sign attestations; Azure OIDC when signing

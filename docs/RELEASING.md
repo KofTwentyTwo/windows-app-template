@@ -1,20 +1,19 @@
 # Releasing Kof22 App
 
+<!--#if (templateSource) -->
+This runbook applies to generated applications. To publish the source template's
+NuGet package, follow [TEMPLATE.md](../TEMPLATE.md#publishing-this-template).
+<!--#endif -->
+
 Releases follow the
 [KofTwentyTwo release standard](https://github.com/KofTwentyTwo/standards/blob/main/standards/releases.md).
 Pushing a protected `v*` tag on `main` runs [`.github/workflows/release.yml`](../.github/workflows/release.yml),
 which calls the shared `release-velopack.yml` workflow in KofTwentyTwo/standards.
 
-## Pending before the first release
+## Workflow baseline
 
-- **Repin the release workflow.** `release.yml` is pinned to the head of
-  KofTwentyTwo/standards#5 (the Velopack release workflow) while that pull request is in
-  review; repin it, like the other workflows, to a commit on standards `main`.
-- **Regenerate the lock files against the published AppKit.** The committed
-  `packages.lock.json` files were produced from a locally built AppKit 0.1.0, whose
-  content hashes differ from the package published on nuget.org. Once AppKit 0.1.0 is on
-  nuget.org, run `dotnet restore Kof22App.slnx -p:Platform=x64 --force-evaluate` and
-  commit the updated lock files; CI's locked restore fails until then.
+Shared workflows are pinned to published standards v0.1.2. The release caller checks main ancestry and reruns build, coverage, formatting, UI tests, security scans and CodeQL before publication.
+The AppKit dependency locks now match the published 0.1.0 packages. Before changing any package version, regenerate the affected locks and verify a locked restore with a clean package cache.
 
 ## Versioning and channels
 
@@ -33,7 +32,7 @@ pull request right after each release.
 
 The shared workflow (SLSA Build L3: the build definition lives in KofTwentyTwo/standards):
 
-1. Validates the tag and re-runs every gate that guards `main`: locked restore,
+1. Validates strict SemVer and repeats locked restore,
    zero-warning build, unit tests, and the 100% coverage gate.
 2. Publishes the app unpackaged and self-contained (and the single-file command line),
    signs the binaries when code signing is enabled, and packs them with Velopack: Setup,
