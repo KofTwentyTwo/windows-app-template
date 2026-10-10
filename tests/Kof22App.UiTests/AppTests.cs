@@ -103,9 +103,22 @@ public class AppTests
       using var session = new AppSession();
       session.EnterText("NameBox", "Ada");
       session.ClickElement("GreetButton");
-      session.WaitFor(
-         () => session.FindInApp(cf => cf.ByAutomationId("GreetingText")) is { } text && text.Name.EndsWith(", Ada!", StringComparison.Ordinal) ? text : null,
-         "the greeting");
+      string? observedGreeting = null;
+      try
+      {
+         session.WaitFor(
+            () =>
+            {
+               AutomationElement? text = session.FindInApp(cf => cf.ByAutomationId("GreetingText"));
+               observedGreeting = text?.Name;
+               return observedGreeting?.EndsWith(", Ada!", StringComparison.Ordinal) == true ? text : null;
+            },
+            "the greeting");
+      }
+      catch(TimeoutException exception)
+      {
+         throw new TimeoutException($"{exception.Message} Observed greeting: '{observedGreeting}'. App logs: {session.ReadLogs()}", exception);
+      }
       session.WaitFor(
          () => session.ReadSettings().Contains("\"LastName\": \"Ada\"", StringComparison.Ordinal) ? session.MainWindow : null,
          "settings.json to record the name");

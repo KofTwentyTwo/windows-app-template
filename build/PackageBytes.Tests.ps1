@@ -18,7 +18,7 @@ Describe 'Final package byte preservation' `
       New-Item -ItemType Directory -Path "$script:ByteFixture/source", "$script:ByteFixture/portable/current", "$script:ByteFixture/full/lib/app" | Out-Null
       foreach($directory in @('source', 'portable/current', 'full/lib/app'))
       {
-         [IO.File]::WriteAllBytes("$script:ByteFixture/$directory/Runtime.dll", [byte[]](1, 2, 3, 4))
+         Copy-Item -LiteralPath (Join-Path $PSHOME 'System.Runtime.dll') -Destination "$script:ByteFixture/$directory/Runtime.dll"
       }
    }
 
@@ -31,7 +31,9 @@ Describe 'Final package byte preservation' `
 
    It 'rejects changed framework bytes even when file length is unchanged' `
    {
-      [IO.File]::WriteAllBytes("$script:ByteFixture/portable/current/Runtime.dll", [byte[]](0, 0, 3, 4))
+      $changed = [IO.File]::ReadAllBytes("$script:ByteFixture/portable/current/Runtime.dll")
+      $changed[0] = 0
+      [IO.File]::WriteAllBytes("$script:ByteFixture/portable/current/Runtime.dll", $changed)
       [IO.Compression.ZipFile]::CreateFromDirectory("$script:ByteFixture/portable", "$script:ByteFixture/portable.zip")
       [IO.Compression.ZipFile]::CreateFromDirectory("$script:ByteFixture/full", "$script:ByteFixture/full.nupkg")
       { & $script:PackageByteGate -PublishDirectory "$script:ByteFixture/source" -PortableArchive "$script:ByteFixture/portable.zip" -FullPackage "$script:ByteFixture/full.nupkg" } | Should -Throw '*changed published bytes*Runtime.dll*'
@@ -43,5 +45,15 @@ Describe 'Final package byte preservation' `
       [IO.Compression.ZipFile]::CreateFromDirectory("$script:ByteFixture/portable", "$script:ByteFixture/portable.zip")
       [IO.Compression.ZipFile]::CreateFromDirectory("$script:ByteFixture/full", "$script:ByteFixture/full.nupkg")
       { & $script:PackageByteGate -PublishDirectory "$script:ByteFixture/source" -PortableArchive "$script:ByteFixture/portable.zip" -FullPackage "$script:ByteFixture/full.nupkg" } | Should -Throw '*omits published file*Runtime.dll*'
+   }
+
+   It 'rejects a corrupt published executable header before comparing archives' `
+   {
+      $changed = [IO.File]::ReadAllBytes("$script:ByteFixture/source/Runtime.dll")
+      $changed[0] = 0
+      [IO.File]::WriteAllBytes("$script:ByteFixture/source/Runtime.dll", $changed)
+      [IO.Compression.ZipFile]::CreateFromDirectory("$script:ByteFixture/portable", "$script:ByteFixture/portable.zip")
+      [IO.Compression.ZipFile]::CreateFromDirectory("$script:ByteFixture/full", "$script:ByteFixture/full.nupkg")
+      { & $script:PackageByteGate -PublishDirectory "$script:ByteFixture/source" -PortableArchive "$script:ByteFixture/portable.zip" -FullPackage "$script:ByteFixture/full.nupkg" } | Should -Throw '*Invalid published PE binary: Runtime.dll*'
    }
 }

@@ -22,6 +22,21 @@ $files = @(Get-ChildItem -LiteralPath $source -File -Recurse | Where-Object {
       $_.Extension -ne '.pdb' -and $_.FullName -notmatch '[\\/]createdump[^\\/]*|\.vshost\.|\.nupkg$'
    })
 if($files.Count -eq 0) { throw 'Publish payload is empty.' }
+foreach($file in $files | Where-Object Extension -In '.exe', '.dll')
+{
+   $stream = [IO.File]::OpenRead($file.FullName)
+   try
+   {
+      $reader = [Reflection.PortableExecutable.PEReader]::new($stream)
+      try
+      {
+         if($null -eq $reader.PEHeaders.PEHeader) { throw 'Missing executable header.' }
+      }
+      finally { $reader.Dispose() }
+   }
+   catch { throw "Invalid published PE binary: $($file.Name). $($_.Exception.Message)" }
+   finally { $stream.Dispose() }
+}
 foreach($specification in @(@{ path = $PortableArchive; prefix = 'current/' }, @{ path = $FullPackage; prefix = 'lib/app/' }))
 {
    $archive = [IO.Compression.ZipFile]::OpenRead((Get-Item -LiteralPath $specification.path).FullName)

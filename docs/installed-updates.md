@@ -3,6 +3,9 @@
 Run on an interactive Windows x64 desktop with the pinned .NET SDK and Velopack
 1.2.161. The test packages and installs only uniquely named local fixtures; it
 does not create GitHub releases, use Azure, or produce release-signing evidence.
+Reserve at least 8 GB free on the repository artifact volume. The harness checks
+this before building; retained archives, portable copies and installations can
+otherwise exhaust the volume during extraction.
 
 ```powershell
 dotnet tool install vpk --version 1.2.161 --tool-path artifacts/smoke-tools
@@ -39,7 +42,8 @@ without the app PRI, `MainWindow.xaml` fails to load even when Debug UI tests pa
 - Velopack downloads and verifies the real package, applies it, and restarts the
   actual WinUI app. Its window must appear. Post-upgrade AppKit version and channel
   must match, with no remaining offer; six applicable UI tests run after each upgrade.
-- Both archive payloads must preserve every original non-PDB publish file outside
+- Published executable headers must parse before archive comparisons. Both archive
+  payloads must preserve every original non-PDB publish file outside
   Velopack's default exclusions. SHA256 comparisons reject changed or missing
   dependencies before installation, including a locally observed corrupt runtime DLL.
 - Complete portable bundles preserve their channel and support updates. They differ
@@ -49,21 +53,36 @@ The probe only checks the public AppKit service's installed status/version. Down
 and apply use Velopack directly to inject offline GitHub transport; the AppKit UI's
 live GitHub check/apply flow and public release hosting remain separate acceptance
 items. This does not prove Authenticode signing, installer trust, deltas or ARM64/x86.
-The test probe is copied only into smoke packages, never production publish output.
+Only the probe's executable, assembly and runtime manifests are added to smoke
+packages. Its framework dependency copies never overwrite the application's
+published payload. The probe is never added to production publish output.
 
-Local tests demonstrated both installed upgrades, restart, and nineteen UI checks.
-Subsequent full payload comparisons found changed dependency bytes in multiple
-unsigned smoke packages. The byte gate rejects these packages; a complete run with
-all byte checks passing and the hosted CI run remain acceptance requirements.
-Track investigation and production verification in AppKit issue #22. Do not
-attribute the corruption to a particular tool or machine component without proof.
+A fresh GUI-only run passed both installed upgrades, restart, all four byte gates
+and nineteen UI checks. Each version preserved 532 original publish files in both
+archive formats. CLI attempts also passed every byte gate and the stable upgrade,
+but two installed UI suites timed out on input-driven checks; AppKit issue #23
+tracks that separate acceptance gap. Physical mouse input now focuses the target
+and waits for input processing before clicking; greeting failures include observed
+text and isolated app logs. Hosted CI and complete CLI acceptance remain required.
+
+Original publish/archive corruption fixtures remain retained under AppKit
+issue #22. These successful staging checks do not establish their cause. Do not attribute
+the corruption to a particular tool or machine component without proof.
 
 ## Evidence and cleanup
 
 CI requires `ci / installed-updates` and retains JSON results, process/installer logs
 and TRX UI reports. Local evidence stays under a fresh `artifacts/installed-smoke-*`
 directory. Existing output directories are refused so each attempt tests fresh
-packages and results. Each successful/failing installed test
+packages and results. Packer children receive a private `VELOPACK_TEMP` directory
+named for the unique test package ID, isolating staging from other app builds.
+Publish and probe output also use that private system temporary directory. This
+matches the Windows CI staging location and avoids repeated writes into the
+checkout during local diagnostics; it does not establish the corruption's cause.
+`build-directory.txt` records its location. Build inputs are retained there for
+investigation, while packages and reports remain under the repository artifacts
+directory.
+Each successful/failing installed test
 attempts uninstall in `finally`, checking the bounded root and unique manifest ID
 first. Unexpected existing installations fail rather than being overwritten.
 

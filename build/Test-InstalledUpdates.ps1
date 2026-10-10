@@ -30,10 +30,16 @@ $mainExe = "$name.exe"
 $probeExe = "$name.UpdateProbe.exe"
 $vpk = (Get-Command $VpkPath -CommandType Application -ErrorAction Stop).Source
 if(Test-Path -LiteralPath $outputRoot) { throw 'Choose a fresh smoke output directory.' }
+$outputDrive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($outputRoot))
+if($outputDrive.AvailableFreeSpace -lt 8GB) { throw 'Installed smoke needs at least 8 GB free on the output volume. Move completed fixtures before retrying.' }
 New-Item -ItemType Directory -Path $outputRoot | Out-Null
 $idFile = Join-Path $outputRoot 'package-id.txt'
 $packageId = 'k22-smoke-' + [guid]::NewGuid().ToString('N')
+$buildRoot = Join-Path ([IO.Path]::GetTempPath()) $packageId
+if(Test-Path -LiteralPath $buildRoot) { throw 'Private build directory already exists.' }
+New-Item -ItemType Directory -Path $buildRoot | Out-Null
 Set-Content -LiteralPath $idFile -Value $packageId
+Set-Content -LiteralPath (Join-Path $outputRoot 'build-directory.txt') -Value $buildRoot
 $fixtureRoot = Join-Path $outputRoot 'fixture'
 $dataVariable = $AppId.ToUpperInvariant().Replace('-', '_') + '_DATA_DIR'
 $oldDataDirectory = [Environment]::GetEnvironmentVariable($dataVariable)
@@ -61,6 +67,10 @@ function Invoke-SmokeProcess
    $start.WorkingDirectory = $repositoryRoot
    $start.RedirectStandardOutput = $true
    $start.RedirectStandardError = $true
+   if($File -eq $vpk)
+   {
+      $start.Environment['VELOPACK_TEMP'] = Join-Path ([IO.Path]::GetTempPath()) $packageId
+   }
    foreach($argument in $Arguments) { $start.ArgumentList.Add($argument) }
    $process = [Diagnostics.Process]::Start($start)
    $stdout = $process.StandardOutput.ReadToEndAsync()
@@ -123,14 +133,17 @@ try
    {
       $version = $release.version
       Write-Output "Packaging $version ($($release.channel))"
-      $publish = Join-Path $outputRoot "publish/$version"
-      $probe = Join-Path $outputRoot "probe/$version"
+      $publish = Join-Path $buildRoot "publish/$version"
+      $probe = Join-Path $buildRoot "probe/$version"
       Invoke-SmokeProcess -File 'dotnet' -Arguments @('publish', "$repositoryRoot/src/$name/$name.csproj", '-c', 'Release', '-r', 'win-x64', '-p:Platform=x64', "-p:Version=$version", '-p:SelfContained=true', '-p:WindowsAppSDKSelfContained=true', '-p:RestoreLockedMode=true', '-o', $publish) -TimeoutSeconds 300
       Invoke-SmokeProcess -File 'dotnet' -Arguments @('publish', "$repositoryRoot/tests/$name.UpdateProbe/$name.UpdateProbe.csproj", '-c', 'Release', '-r', 'win-x64', "-p:Version=$version", '-p:SelfContained=true', '-p:RestoreLockedMode=true', '-o', $probe) -TimeoutSeconds 300
-      Copy-Item -Path "$probe/*" -Destination $publish -Recurse -Force
+      foreach($extension in @('.exe', '.dll', '.deps.json', '.runtimeconfig.json'))
+      {
+         Copy-Item -LiteralPath (Join-Path $probe "$name.UpdateProbe$extension") -Destination $publish
+      }
       if(Test-Path -LiteralPath "$repositoryRoot/src/$name.Cli/$name.Cli.csproj")
       {
-         $cli = Join-Path $outputRoot "cli/$version"
+         $cli = Join-Path $buildRoot "cli/$version"
          Invoke-SmokeProcess -File 'dotnet' -Arguments @('publish', "$repositoryRoot/src/$name.Cli/$name.Cli.csproj", '-c', 'Release', '-r', 'win-x64', "-p:Version=$version", '-p:SelfContained=true', '-p:PublishSingleFile=true', '-p:RestoreLockedMode=true', '-o', $cli) -TimeoutSeconds 300
          Invoke-SmokeProcess -File (Join-Path $cli "$AppId.exe") -Arguments @('--version')
          $versionOutput = Get-Content -LiteralPath (Join-Path $outputRoot "process-$script:smokeProcessNumber.log") -Raw
@@ -150,10 +163,10 @@ try
    }
    ConvertTo-Json -InputObject @($releases) -Depth 8 | Set-Content -LiteralPath (Join-Path $fixtureRoot 'releases.json')
    Invoke-SmokeProcess -File 'dotnet' -Arguments @('build', $solution[0].FullName, '-p:Platform=x64', '-p:RestoreLockedMode=true', '-warnaserror') -TimeoutSeconds 300
-   $loose = Get-SmokeResult -Exe (Join-Path $outputRoot "publish/0.1.0/$probeExe") -ResultPath (Join-Path $outputRoot 'loose.json')
+   $loose = Get-SmokeResult -Exe (Join-Path $buildRoot "publish/0.1.0/$probeExe") -ResultPath (Join-Path $outputRoot 'loose.json')
    if($loose.Installed -or $loose.AppKitSupported -or $null -ne $loose.Version) { throw 'Loose publish output unexpectedly supports updates.' }
    $records.Add(@{ kind = 'loose'; result = $loose })
-   $env:K22_UITEST_EXE = Join-Path $outputRoot "publish/0.1.0/$mainExe"
+   $env:K22_UITEST_EXE = Join-Path $buildRoot "publish/0.1.0/$mainExe"
    Invoke-SmokeProcess -File 'dotnet' -Arguments @('test', "$repositoryRoot/tests/$name.UiTests", '--no-build', '--logger', 'trx;LogFileName=published-ui.trx', '--results-directory', $outputRoot) -TimeoutSeconds 180
    foreach($initial in @($versions[0], $versions[2]))
    {
@@ -198,7 +211,7 @@ try
          } while($started.Count -eq 0 -and [DateTime]::UtcNow -lt $deadline)
          if($started.Count -eq 0) { throw 'Updated main application did not restart with a window.' }
          $installedHash = (Get-FileHash -LiteralPath (Join-Path $install "current/$name.dll") -Algorithm SHA256).Hash
-         $publishedHash = (Get-FileHash -LiteralPath (Join-Path $outputRoot "publish/$($initial.target)/$name.dll") -Algorithm SHA256).Hash
+         $publishedHash = (Get-FileHash -LiteralPath (Join-Path $buildRoot "publish/$($initial.target)/$name.dll") -Algorithm SHA256).Hash
          if($installedHash -ne $publishedHash) { throw 'Installed app bytes do not match the target published assembly.' }
          Stop-SmokeApp -Exe $currentExe -Confirm:$false
          $after = Get-SmokeResult -Exe $installedProbe -ResultPath (Join-Path $outputRoot "$channel-after.json")

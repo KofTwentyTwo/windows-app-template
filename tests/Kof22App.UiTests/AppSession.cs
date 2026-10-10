@@ -27,6 +27,7 @@ public sealed class AppSession : IDisposable
    private static readonly TimeSpan s_defaultTimeout = TimeSpan.FromSeconds(10);
    private static readonly TimeSpan s_launchTimeout = TimeSpan.FromSeconds(30);
    private static readonly TimeSpan s_pollInterval = TimeSpan.FromMilliseconds(250);
+   private readonly DpiAwarenessScope _dpi;
 
 
 
@@ -43,9 +44,10 @@ public sealed class AppSession : IDisposable
       var startInfo = new ProcessStartInfo(ExePath) { WorkingDirectory = Path.GetDirectoryName(ExePath) ?? "" };
       startInfo.Environment[AppIdentity.Info.DataDirectoryVariable] = DataDirectory;
 
-      Automation = new UIA3Automation();
+      _dpi = new DpiAwarenessScope();
       try
       {
+         Automation = new UIA3Automation();
          App = Application.Launch(startInfo);
          MainWindow = WaitForMainWindow();
       }
@@ -184,6 +186,8 @@ public sealed class AppSession : IDisposable
    {
       AutomationElement element = WaitForElement(automationId);
       MainWindow.SetForeground();
+      element.Focus();
+      Wait.UntilInputIsProcessed();
       element.Click();
       Wait.UntilInputIsProcessed();
    }
@@ -209,6 +213,7 @@ public sealed class AppSession : IDisposable
       else
       {
          element.Focus();
+         Wait.UntilInputIsProcessed();
          Keyboard.Type(text);
       }
       Wait.UntilInputIsProcessed();
@@ -307,32 +312,39 @@ public sealed class AppSession : IDisposable
    {
       try
       {
-         App?.Close();
-      }
-      catch
-      {
-         // Already gone; the kill below double-checks.
-      }
-      try
-      {
-         if(App is { HasExited: false })
+         try
          {
-            App.Kill();
+            App?.Close();
+         }
+         catch
+         {
+            // Already gone; the kill below double-checks.
+         }
+         try
+         {
+            if(App is { HasExited: false })
+            {
+               App.Kill();
+            }
+         }
+         catch
+         {
+            // Best effort.
+         }
+         App?.Dispose();
+         Automation?.Dispose();
+         try
+         {
+            Directory.Delete(DataDirectory, recursive: true);
+         }
+         catch
+         {
+            // A log handle can linger briefly after exit; the temp cleaner gets it.
          }
       }
-      catch
+      finally
       {
-         // Best effort.
-      }
-      App?.Dispose();
-      Automation.Dispose();
-      try
-      {
-         Directory.Delete(DataDirectory, recursive: true);
-      }
-      catch
-      {
-         // A log handle can linger briefly after exit; the temp cleaner gets it.
+         _dpi.Dispose();
       }
    }
 }
