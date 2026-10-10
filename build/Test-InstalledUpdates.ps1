@@ -110,6 +110,18 @@ function Get-SmokeResult
 
 <#
 .SYNOPSIS
+Checks the CLI's complete version token with or without optional SourceLink metadata.
+#>
+function Assert-SmokeCliVersion
+{
+   [CmdletBinding()]
+   param([string]$Output, [string]$Version)
+   $pattern = ' ' + [regex]::Escape($Version) + '(?: \([^()\r\n]+\))?$'
+   if($Output.TrimEnd() -cnotmatch $pattern) { throw 'Published CLI reports an incorrect version.' }
+}
+
+<#
+.SYNOPSIS
 Closes only the app process launched from the exact test installation directory.
 #>
 function Stop-SmokeApp
@@ -151,7 +163,7 @@ try
          Invoke-SmokeProcess -File 'dotnet' -Arguments @('publish', "$repositoryRoot/src/$name.Cli/$name.Cli.csproj", '-c', 'Release', '-r', 'win-x64', "-p:Version=$version", '-p:SelfContained=true', '-p:PublishSingleFile=true', '-p:RestoreLockedMode=true', '-o', $cli) -TimeoutSeconds 300
          Invoke-SmokeProcess -File (Join-Path $cli "$AppId.exe") -Arguments @('--version')
          $versionOutput = Get-Content -LiteralPath (Join-Path $outputRoot "process-$script:smokeProcessNumber.log") -Raw
-         if(-not $versionOutput.Contains(" $version ", [StringComparison]::Ordinal)) { throw 'Published CLI reports an incorrect version.' }
+         Assert-SmokeCliVersion -Output $versionOutput -Version $version
       }
       Invoke-SmokeProcess -File $vpk -Arguments @('pack', '--runtime', 'win-x64', '--packId', $packageId, '--packVersion', $version, '--packDir', $publish, '--mainExe', $mainExe, '--channel', $release.channel, '--outputDir', (Join-Path $fixtureRoot $version), '--shortcuts', 'None', '--delta', 'None', '--skip-updates', '--yes') -TimeoutSeconds 300
       & "$PSScriptRoot/Assert-PackageBytes.ps1" -PublishDirectory $publish -PortableArchive (Join-Path $fixtureRoot "$version/$packageId-$($release.channel)-Portable.zip") -FullPackage (Join-Path $fixtureRoot "$version/$packageId-$version-$($release.channel)-full.nupkg")
