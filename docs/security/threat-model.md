@@ -74,6 +74,7 @@ of the app.
 | T8 | Repository administration | Tampering | Setup weakens existing protections or targets another repository | Low | High | Offline preview; exact public target/admin checks; current-PR checks; refuse conflicting rules and broad release refs; read back settings | Local tests pass; live bootstrap pending |
 | T9 | PR review workflow | Elevation of privilege | Untrusted PR code runs with a checks write token | Low | High | Comment-triggered workflow executes trusted workflow SHA only; no PR checkout; human current-SHA acknowledgement required | Local tests pass; hosted enforcement pending |
 | T10 | Package-manager distributions | Tampering | Manifest points at wrong bytes or an unsafe executable | Low | High | Stable-only generation; ZIP identity/layout checks; actual SHA256 and provenance verification; exclude helper shims; candidate review before feed publication | Local tests and real archive/schema checks pass; feed lifecycle pending |
+| T11 | Installed update smoke | Tampering | A test overwrites a real app or deletes unrelated files | Low | Medium | Unique test package ID; fresh artifacts-only output; app identity check; literal arguments; offline URL allowlist; exact process path; root/manifest checks before uninstall | Local runtime/boundary tests pass; hosted CI pending |
 
 ## 7. Accepted risks
 

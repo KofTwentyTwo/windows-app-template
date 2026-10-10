@@ -3,8 +3,11 @@
 Velopack Setup and portable downloads remain the standard release artifacts.
 Scoop, Chocolatey and winget are optional. Choose one portable payload for the
 Scoop/Chocolatey presets: the single-file CLI (when enabled) or the GUI portable ZIP.
-These package managers manage upgrades themselves; portable copies do not use
-Velopack self-update. Settings stay under `%LOCALAPPDATA%\kof22-app` across upgrades.
+These package managers manage upgrades themselves. A complete GUI Velopack portable
+bundle also supports self-update; avoid mixing package-manager upgrades with the
+app's updater. Disable startup update checks when using a manager and update through
+that manager. The standalone CLI has no app updater. Settings stay under
+`%LOCALAPPDATA%\kof22-app` across upgrades.
 
 ## Generate and validate
 

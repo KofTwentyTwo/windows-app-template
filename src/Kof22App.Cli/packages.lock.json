@@ -8,6 +8,12 @@
         "resolved": "3.0.296",
         "contentHash": "1Yp/6OK/Ev66hE2YLe9UvIgtJrKOX/xvoGDe0UbdtuG2ZxUoDoyONdEn+HWCDuy02Mu8SmglHEd/9SGPrM1qYg=="
       },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "xi+BDjFpW+Sb+MHFHaH6Y/gV9I8BluFwRXc1QyCdoZbIK26eNiBeFuMTe/FMwc33G1wdHCyDg7CVTmb8OdQrMQ=="
+      },
       "kof22app.core": {
         "type": "Project",
         "dependencies": {
@@ -27,6 +33,9 @@
         "resolved": "0.1.0",
         "contentHash": "+ymM8DxPel+C527Cp7lrhhdu0xnGHb6fl4/5vAlzsd0iiyW8u+UiOfQl1paNxA26iQZTbxQ8fMLQsUnaOA8GcQ=="
       }
-    }
+    },
+    "net10.0/win-arm64": {},
+    "net10.0/win-x64": {},
+    "net10.0/win-x86": {}
   }
 }

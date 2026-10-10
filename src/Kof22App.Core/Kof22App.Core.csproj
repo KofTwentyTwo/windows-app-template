@@ -5,6 +5,9 @@
         coverage by the CI gate. -->
    <PropertyGroup>
       <TargetFramework>net10.0</TargetFramework>
+      <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+      <!-- Include the SDK tool dependency in the lock used by single-file CLI publishing. -->
+      <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
    </PropertyGroup>
 
    <ItemGroup>

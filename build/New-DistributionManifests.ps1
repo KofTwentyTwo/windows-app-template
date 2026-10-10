@@ -60,7 +60,7 @@ $packageId = if($ArtifactKind -eq 'Cli') { "$AppId-cli" } else { "$AppId-portabl
 $scoop = [ordered]@{
    version = $Version; description = $Description; homepage = $homepage; license = 'MIT'
    architecture = @{ '64bit' = @{ url = $url; hash = $sha256 } }
-   notes        = 'Portable distribution: use this package manager to update; Velopack self-update is unavailable.'
+   notes        = 'Use this package manager to update. GUI Velopack portable bundles can also self-update; avoid mixing update methods.'
 }
 if($ArtifactKind -eq 'Cli') { $scoop.bin = $executable }
 else { $scoop.shortcuts = , @($executable, $DisplayName) }

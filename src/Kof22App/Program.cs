@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-using KofTwentyTwo.AppKit.Updates;
 using Microsoft.UI.Dispatching;
+using Velopack;
 
 
 namespace Kof22App;
@@ -19,7 +19,8 @@ public static class Program
    [STAThread]
    private static void Main()
    {
-      VelopackStartup.Run();
+      // Keep this direct call: vpk verifies the entry assembly before creating installers.
+      VelopackApp.Build().Run();
 
       // The remainder mirrors the XAML-generated Main.
       WinRT.ComWrappersSupport.InitializeComWrappers();

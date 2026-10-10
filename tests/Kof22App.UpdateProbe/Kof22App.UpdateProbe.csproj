@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+   <!-- Test-only executable copied beside a published app by the installed smoke harness. -->
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>net10.0-windows</TargetFramework>
+      <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+   </PropertyGroup>
+
+   <ItemGroup>
+      <PackageReference Include="KofTwentyTwo.AppKit.Updates" />
+   </ItemGroup>
+
+</Project>

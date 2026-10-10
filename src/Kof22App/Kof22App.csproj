@@ -44,4 +44,22 @@
       <Using Include="Kof22App.Core.Greetings" />
    </ItemGroup>
 
+   <!-- Unpackaged WinUI publishes omit the app PRI/XBF items (WindowsAppSDK#6720).
+        Add build-produced resources before the SDK computes/copies publish files. -->
+   <Target Name="IncludeUnpackagedXamlResourcesInPublish" BeforeTargets="ComputeResolvedFilesToPublishList"
+           Condition="'$(WindowsPackageType)' == 'None'">
+      <Error Condition="!Exists('$(TargetDir)$(TargetName).pri')" Text="The app PRI resource index is missing from the build output." />
+      <ItemGroup>
+         <ResolvedFileToPublish Include="$(TargetDir)$(TargetName).pri">
+            <RelativePath>$(TargetName).pri</RelativePath>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+         </ResolvedFileToPublish>
+         <_AppXamlPublishFiles Include="$(TargetDir)**\*.xbf" />
+         <ResolvedFileToPublish Include="@(_AppXamlPublishFiles)">
+            <RelativePath>%(_AppXamlPublishFiles.RecursiveDir)%(_AppXamlPublishFiles.Filename)%(_AppXamlPublishFiles.Extension)</RelativePath>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+         </ResolvedFileToPublish>
+      </ItemGroup>
+   </Target>
+
 </Project>

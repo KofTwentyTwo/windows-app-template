@@ -1,0 +1,71 @@
+# Installed release smoke tests
+
+Run on an interactive Windows x64 desktop with the pinned .NET SDK and Velopack
+1.2.161. The test packages and installs only uniquely named local fixtures; it
+does not create GitHub releases, use Azure, or produce release-signing evidence.
+
+```powershell
+dotnet tool install vpk --version 1.2.161 --tool-path artifacts/smoke-tools
+./build/Test-InstalledUpdates.ps1 -VpkPath ./artifacts/smoke-tools/vpk.exe
+```
+
+The harness publishes the actual starter app four times with locked dependencies,
+self-contained .NET and Windows App SDK settings matching the release builder.
+Core and CLI declare the Windows runtime identifiers so their committed locks
+support runtime-specific publishing. Their single-file analyzer setting also locks
+the SDK's ILLink tool dependency used when publishing the CLI as one executable.
+The harness publishes and runs each CLI version when that head exists.
+Keep `VelopackApp.Build().Run()` directly in
+the app's entry point: the packer's startup check cannot recognize an indirect
+AppKit wrapper call. Do not disable that pack-time check.
+
+The app's publish target explicitly includes its generated PRI and XBF resources.
+This fixes the unpackaged publish omission documented in
+[WindowsAppSDK#6720](https://github.com/microsoft/WindowsAppSDK/issues/6720):
+without the app PRI, `MainWindow.xaml` fails to load even when Debug UI tests pass.
+
+## What the harness checks
+
+- Loose published output launches and passes the full UI suite; AppKit reports
+  self-update unavailable when no Velopack manifest/updater exists.
+- Real Setup installs `stable` 0.1.0 and `dev` 0.3.0-beta.1 into separate, bounded
+  test directories using one unique test package ID. No shortcuts are requested.
+- The probe uses the production `GithubSource` with a test-only downloader that
+  maps GitHub response URLs to local release assets and refuses other URLs.
+  No locator or update manager is mocked. The installed manifest selects the feed;
+  the entry assembly version selects whether to include prereleases.
+- Stable offers only 0.4.0; dev offers only 0.3.0-beta.2, even though the stable
+  version is higher. Requests must never fetch the other channel's feed.
+- Velopack downloads and verifies the real package, applies it, and restarts the
+  actual WinUI app. Its window must appear. Post-upgrade AppKit version and channel
+  must match, with no remaining offer; six applicable UI tests run after each upgrade.
+- Both archive payloads must preserve every original non-PDB publish file outside
+  Velopack's default exclusions. SHA256 comparisons reject changed or missing
+  dependencies before installation, including a locally observed corrupt runtime DLL.
+- Complete portable bundles preserve their channel and support updates. They differ
+  from loose F5/publish output; a `.portable` marker does not disable self-update.
+
+The probe only checks the public AppKit service's installed status/version. Download
+and apply use Velopack directly to inject offline GitHub transport; the AppKit UI's
+live GitHub check/apply flow and public release hosting remain separate acceptance
+items. This does not prove Authenticode signing, installer trust, deltas or ARM64/x86.
+The test probe is copied only into smoke packages, never production publish output.
+
+Local tests demonstrated both installed upgrades, restart, and nineteen UI checks.
+Subsequent full payload comparisons found changed dependency bytes in multiple
+unsigned smoke packages. The byte gate rejects these packages; a complete run with
+all byte checks passing and the hosted CI run remain acceptance requirements.
+Track investigation and production verification in AppKit issue #22. Do not
+attribute the corruption to a particular tool or machine component without proof.
+
+## Evidence and cleanup
+
+CI requires `ci / installed-updates` and retains JSON results, process/installer logs
+and TRX UI reports. Local evidence stays under a fresh `artifacts/installed-smoke-*`
+directory. Existing output directories are refused so each attempt tests fresh
+packages and results. Each successful/failing installed test
+attempts uninstall in `finally`, checking the bounded root and unique manifest ID
+first. Unexpected existing installations fail rather than being overwritten.
+
+See the official [Setup switches](https://docs.velopack.io/reference/cli/content/setup-windows)
+and [updater switches](https://docs.velopack.io/reference/cli/content/update-windows).

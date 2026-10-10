@@ -52,14 +52,14 @@ jobs:
           Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force
           Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
           Invoke-ScriptAnalyzer -Path build -Recurse -Settings ./PSScriptAnalyzerSettings.psd1 -EnableExit
-      - name: Verify coverage gate rejection paths
+      - name: Verify script boundary tests
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           Install-Module Pester -RequiredVersion 5.7.1 -Scope CurrentUser -Force
           Import-Module Pester -RequiredVersion 5.7.1
           $testConfiguration = New-PesterConfiguration
-          $testConfiguration.Run.Path = @('build/Assert-Coverage.Tests.ps1', 'build/GitHubRepository.Tests.ps1', 'build/Distribution.Tests.ps1')
+          $testConfiguration.Run.Path = @('build/Assert-Coverage.Tests.ps1', 'build/GitHubRepository.Tests.ps1', 'build/Distribution.Tests.ps1', 'build/InstalledUpdates.Tests.ps1', 'build/PackageBytes.Tests.ps1')
           $testConfiguration.Run.Exit = $true
           $testConfiguration.TestResult.Enabled = $true
           $testConfiguration.TestResult.OutputPath = 'TestResults/coverage-gate.xml'

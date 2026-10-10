@@ -28,6 +28,9 @@ An installed copy only updates within its own channel. `Directory.Build.props` h
 `VersionPrefix`, the next expected release; local builds are `<prefix>-dev`. Bump it in a
 pull request right after each release.
 
+Run the [installed channel smoke test](installed-updates.md) before releasing.
+It verifies real stable/dev upgrades and published-output startup with local fixtures.
+
 ## What a release does
 
 The shared workflow (SLSA Build L3: the build definition lives in KofTwentyTwo/standards):
