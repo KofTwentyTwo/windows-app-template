@@ -1,0 +1,36 @@
+# Single-maintainer automated review record (K22-SDLC-12 / EX-0001).
+# Privileged events execute only code from the trusted workflow commit, never a PR head.
+name: review
+
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+
+permissions: {}
+
+concurrency:
+  group: review-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  record:
+    if: github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      checks: write # publish the required check on the live PR head
+    steps:
+      - name: Checkout trusted gate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Verify the current commit review record
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { run } = require('./.github/scripts/review-gate.cjs');
+            await run({ github, context, core });

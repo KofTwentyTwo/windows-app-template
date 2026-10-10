@@ -24,7 +24,7 @@ jobs:
       contents: read         # check out the code
       security-events: write # upload CodeQL results to code scanning
     with:
-      languages: '["csharp", "actions"]'
+      languages: '["csharp", "actions", "javascript-typescript"]'
       build-mode: manual
       build-command: dotnet build Kof22App.slnx -p:Platform=x64
       runs-on: windows-latest

@@ -71,6 +71,8 @@ of the app.
 | T5 | Install folder | Elevation of privilege | DLL planting next to the exe | Low | High | Per-user install under `%LOCALAPPDATA%`, owned by the user; no loading from the working directory | Mitigated |
 | T6 | Shell | Denial of service | An unhandled exception closes the app with unsaved work | Medium | Low | AppKit crash net logs and survives UI exceptions; one-dialog-at-a-time guard | Mitigated |
 | T7 | Input | Denial of service | Very long input slows or breaks the UI | Low | Low | Length limits in Core services | Mitigated |
+| T8 | Repository administration | Tampering | Setup weakens existing protections or targets another repository | Low | High | Offline preview; exact public target/admin checks; current-PR checks; refuse conflicting rules and broad release refs; read back settings | Local tests pass; live bootstrap pending |
+| T9 | PR review workflow | Elevation of privilege | Untrusted PR code runs with a checks write token | Low | High | Comment-triggered workflow executes trusted workflow SHA only; no PR checkout; human current-SHA acknowledgement required | Local tests pass; hosted enforcement pending |
 
 ## 7. Accepted risks
 
@@ -82,3 +84,4 @@ of the app.
 | Date | Version | Reviewer | Changes |
 | --- | --- | --- | --- |
 | 2026-10-09 | template baseline | maintainer | Initial model from the Windows desktop reference architecture |
+| 2026-10-10 | repository setup | Codex (GPT-6) | Added administration and review workflow trust boundaries; live proof pending |

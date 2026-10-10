@@ -4,6 +4,12 @@
 # updates are not delayed by the cooldown.
 version: 2
 updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
   # Always: keeps SHA-pinned actions and reusable workflows current (K22-CI-11).
   - package-ecosystem: github-actions
     directory: /

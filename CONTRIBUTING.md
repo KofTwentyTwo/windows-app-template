@@ -90,6 +90,13 @@ pre-commit install --hook-type pre-commit --hook-type commit-msg
 | `ci / build-test` | Locked restore, zero-warning build, unit tests, 100% coverage gate |
 | `ci / format` | `dotnet format --verify-no-changes --severity warn` |
 | `ci / ui-tests` | FlaUI end-to-end tests of the app |
+| `scripts / powershell`, `scripts / javascript` | Tool lint, setup/coverage boundary tests, review tests and dependency signatures |
+| `codeql / analyze (javascript-typescript)` | Static analysis of repository review tooling |
+| `review / automated` (single maintainer) | Current-commit automated review acknowledged by the configured human maintainer |
+
+Run `npm ci --ignore-scripts`, `npm run lint` and `npm test` for repository JavaScript.
+Run PSScriptAnalyzer with `PSScriptAnalyzerSettings.psd1` and Pester against
+`build/*.Tests.ps1`. New owners follow [repository setup](docs/repository-setup.md).
 
 ## Sign-off (Developer Certificate of Origin)
 

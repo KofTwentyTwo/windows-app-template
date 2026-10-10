@@ -1,0 +1,18 @@
+{
+   "name": "kof22-app-repository-tools",
+   "private": true,
+   "description": "Lint and test the repository review gate; no shipped application dependencies.",
+   "engines": {
+      "node": ">=24.0.0"
+   },
+   "scripts": {
+      "lint": "eslint .github/scripts eslint.config.mjs --max-warnings 0",
+      "test": "node --test .github/scripts/review-gate.test.cjs"
+   },
+   "devDependencies": {
+      "@eslint/js": "10.0.1",
+      "@stylistic/eslint-plugin": "5.10.0",
+      "eslint": "10.12.0"
+   },
+   "packageManager": "npm@11.16.0"
+}

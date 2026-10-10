@@ -40,7 +40,7 @@
         (LICENSE would be packed as a folder of that name). -->
    <ItemGroup>
       <None Include="..\TEMPLATE.md" Pack="true" PackagePath="\" />
-      <Content Include="..\**\*" Exclude="..\**\bin\**;..\**\obj\**;..\.git\**;..\.vs\**;..\TestResults\**;..\testResults.xml;..\artifacts\**;..\templates\**" PackagePath="content" />
+      <Content Include="..\**\*" Exclude="..\**\bin\**;..\**\obj\**;..\.git;..\.git\**;..\.vs\**;..\node_modules\**;..\TestResults\**;..\testResults.xml;..\artifacts\**;..\templates\**" PackagePath="content" />
    </ItemGroup>
 
 </Project>

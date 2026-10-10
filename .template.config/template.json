@@ -102,6 +102,8 @@
             ".github/workflows/ci.yml",
             ".github/workflows/release.yml",
             ".git/**",
+            ".git",
+            "node_modules/**",
             ".vs/**",
             "**/bin/**",
             "**/obj/**",
