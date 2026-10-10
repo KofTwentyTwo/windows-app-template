@@ -18,6 +18,15 @@ dotnet new k22-winapp -n Contoso.Notes --appId contoso-notes --displayName "Cont
    --description "Quick notes that stay out of the way." -o Contoso.Notes
 ```
 
+To try the installable package before its first publication, run from this clone:
+
+```powershell
+dotnet pack templates/KofTwentyTwo.Templates.WindowsApp.csproj -c Release -p:Version=0.1.0 -p:RestoreLockedMode=true -o artifacts/template
+dotnet new install ./artifacts/template/KofTwentyTwo.Templates.WindowsApp.0.1.0.nupkg
+dotnet new k22-winapp -n Contoso.Notes --appId contoso-notes --displayName "Contoso Notes" -o artifacts/Contoso.Notes
+# Add --cli false for a GUI-only app; use a fresh output directory each time.
+```
+
 | Option | Default | What it sets |
 | --- | --- | --- |
 | `-n`, `--name` | (required) | Solution, project, namespace, and executable names (`Contoso.Notes.slnx`, `Contoso.Notes.Core`, `Contoso.Notes.exe`), and the repository name in links |
@@ -32,8 +41,10 @@ The copyright year in license headers becomes the current year.
 
 ## After generating
 
-The generator omits dependency lock files. Before the first commit, run the README's
-restore, build, test, coverage and format commands, then commit the resulting
+The generator omits NuGet dependency lock files. Before the first commit, run
+`dotnet restore <name>.slnx -p:Platform=x64` in the generated directory to create
+them, then run the README's locked restore, build, test, coverage and format
+commands. Commit the resulting
 `packages.lock.json` files. Install the included hooks with
 `pre-commit install --hook-type pre-commit --hook-type commit-msg` after `git init`.
 The generated PowerShell tooling gate uses PSScriptAnalyzer 1.25.0.
@@ -41,12 +52,10 @@ The generated PowerShell tooling gate uses PSScriptAnalyzer 1.25.0.
 1. Follow [the preview/apply/validate setup runbook](docs/repository-setup.md).
    Create the GitHub repository (public, Product tier), push `main`, and apply the
    [repository standard's](https://github.com/KofTwentyTwo/standards/blob/main/standards/repository.md)
-   settings and rulesets, with these required checks: `pr / title`, `pr / dco`,
-   `pr / dependency-review`, `security / secrets`, `security / sca`,
-   `security / workflows`, `codeql / analyze (csharp)`, `codeql / analyze (actions)`,
-   `ci / build-test`, `ci / format`, `ci / ui-tests`, `scripts / powershell`,
-   `scripts / javascript`, `codeql / analyze (javascript-typescript)`, and
-   `review / automated` for the single-maintainer policy.
+   settings and rulesets. Use the setup tool's required contexts and
+   [CONTRIBUTING.md](CONTRIBUTING.md)'s check table; standalone job names have no
+   workflow-name prefix. The source repository additionally requires `template`;
+   generated application repositories do not.
 2. Create the `release` environment limited to `v*` tags, and list the repository in the
    [standards repository inventory](https://github.com/KofTwentyTwo/standards/blob/main/MAINTAINERS.md#repositories)
    (`K22-REPO-42`; the conformance checker fails until it is listed).
