@@ -55,7 +55,10 @@ Never add a workflow-name prefix to standalone job names in required contexts.
 
 The tool verifies the exact public target, `main`, administrator access, absence
 of repository secrets/self-hosted runners, current bootstrap PR SHA and successful
-GitHub Actions checks. It binds required contexts to the observed Actions app ID,
+GitHub Actions checks. Both apply and read-only validation resolve the official
+GitHub Actions application and require its ID on every required context. Checks
+from another producer and missing/wrong policy bindings fail before writes; the
+reviewed offline plan remains unchanged and reusable. The tool
 creates both rulesets and the tag-only `release` environment, enables security
 features, restricts Actions, and reads settings back. Existing matching policy is
 reused; conflicting rules or release policies stop before writes. Unrelated rules

@@ -55,6 +55,7 @@ Describe 'Generated repository administration' `
          $script:Root = 'repos/Example/Notes'
          $script:Writes = [System.Collections.Generic.List[string]]::new()
          $script:State = @{
+            'apps/github-actions'                                      = @{ id = 15368; slug = 'github-actions'; owner = @{ login = 'github' } }
             $script:Root                                               = @{ full_name = 'Example/Notes'; private = $false; default_branch = 'main'; permissions = @{ admin = $true } }
             "$script:Root/rulesets?includes_parents=true&per_page=100" = @()
             "$script:Root/environments?per_page=100"                   = @{ environments = @() }
@@ -126,7 +127,8 @@ Describe 'Generated repository administration' `
          $result = Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) -Confirm:$false
          $result.SettingsVerified | Should -BeTrue
          $script:Writes.Count | Should -Be 13
-         $script:Plan.Requests[-2].Body.rules[-1].parameters.required_status_checks[0].integration_id | Should -Be 15368
+         $main = $script:State["$script:Root/rulesets?includes_parents=true&per_page=100"] | Where-Object name -EQ 'protect-main'
+         $script:State["$script:Root/rulesets/$($main.id)"].rules[-1].parameters.required_status_checks[0].integration_id | Should -Be 15368
          $script:Writes.Clear()
          $newPlan = Get-GitHubRepositoryPlan -Repository 'Example/Notes'
          Invoke-GitHubRepositorySetup -Plan $newPlan -Mode Apply -CheckSha ('a' * 40) -Confirm:$false
@@ -136,6 +138,54 @@ Describe 'Generated repository administration' `
       It 'previews all mutations without writing' `
       {
          Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) -WhatIf
+         $script:Writes.Count | Should -Be 0
+      }
+
+      It 'rejects <Binding> required-check application binding during read-only validation' -ForEach @(
+         @{ Binding = 'incorrect' }, @{ Binding = 'missing' }
+      ) `
+      {
+         Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) -Confirm:$false
+         $main = $script:State["$script:Root/rulesets?includes_parents=true&per_page=100"] | Where-Object name -EQ 'protect-main'
+         $check = $script:State["$script:Root/rulesets/$($main.id)"].rules[-1].parameters.required_status_checks[0]
+         if($Binding -eq 'missing') { $check.Remove('integration_id') } else { $check.integration_id = 777 }
+         $script:Writes.Clear()
+         $plan = Get-GitHubRepositoryPlan -Repository 'Example/Notes'
+         { Invoke-GitHubRepositorySetup -Plan $plan -Mode Validate } | Should -Throw '*protect-main*'
+         $script:Writes.Count | Should -Be 0
+      }
+
+      It 'preserves the caller plan and validates correct bindings without writing' `
+      {
+         $original = $script:Plan | ConvertTo-Json -Depth 30 -Compress
+         Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) -Confirm:$false
+         ($script:Plan | ConvertTo-Json -Depth 30 -Compress) | Should -Be $original
+         $script:Writes.Clear()
+         $result = Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Validate
+         $result.SettingsVerified | Should -BeTrue
+         $script:Writes.Count | Should -Be 0
+      }
+
+      It 'rejects an invalid GitHub Actions application identity: <Invalid>' -ForEach @(
+         @{ Invalid = 'owner' }, @{ Invalid = 'slug' }, @{ Invalid = 'missing id' }, @{ Invalid = 'zero id' }
+      ) `
+      {
+         $app = $script:State['apps/github-actions']
+         switch($Invalid)
+         {
+            'owner' { $app.owner.login = 'untrusted' }
+            'slug' { $app.slug = 'other-actions' }
+            'missing id' { $app.Remove('id') }
+            'zero id' { $app.id = 0 }
+         }
+         { Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) } | Should -Throw '*trusted GitHub Actions application identity*'
+         $script:Writes.Count | Should -Be 0
+      }
+
+      It 'rejects a bootstrap check from a different application before writing' `
+      {
+         $script:Checks[0].app.id = 777
+         { Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) } | Should -Throw '*Bootstrap check not successful*'
          $script:Writes.Count | Should -Be 0
       }
 

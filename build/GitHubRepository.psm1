@@ -167,6 +167,8 @@ function Invoke-GitHubRepositorySetup
    # Never accept an arbitrary JSON request file as an administration program.
    $canonical = Get-GitHubRepositoryPlan -Repository $Plan.Repository -MaintainerCount $Plan.MaintainerCount
    if(-not (Test-RepositoryValue $Plan $canonical) -or -not (Test-RepositoryValue $canonical $Plan)) { throw 'Plan differs from the generated policy. Regenerate it.' }
+   # Bind a fresh policy copy; the caller's reviewed offline plan must remain reusable.
+   $Plan = $canonical
    $root = "repos/$($Plan.Repository)"
    $repositoryState = Invoke-RepositoryApi $root
    if($repositoryState.full_name -ine $Plan.Repository -or $repositoryState.private -or $repositoryState.default_branch -ne 'main')
@@ -175,6 +177,17 @@ function Invoke-GitHubRepositorySetup
    }
    if(-not $repositoryState.permissions.admin) { throw 'Repository administration permission is required.' }
    $null = Invoke-RepositoryApi "$root/branches/main"
+   $actionsApp = Invoke-RepositoryApi 'apps/github-actions'
+   if($actionsApp -isnot [System.Collections.IDictionary] -or -not $actionsApp.Contains('slug') -or
+      $actionsApp.slug -cne 'github-actions' -or -not $actionsApp.Contains('owner') -or
+      $actionsApp.owner -isnot [System.Collections.IDictionary] -or -not $actionsApp.owner.Contains('login') -or
+      $actionsApp.owner.login -cne 'github' -or -not $actionsApp.Contains('id') -or
+      ($actionsApp.id -isnot [int] -and $actionsApp.id -isnot [long]) -or $actionsApp.id -le 0)
+   {
+      throw 'The trusted GitHub Actions application identity could not be verified.'
+   }
+   $checkRule = $Plan.Requests[-2].Body.rules | Where-Object type -EQ 'required_status_checks'
+   foreach($check in $checkRule.parameters.required_status_checks) { $check.integration_id = $actionsApp.id }
    $repositorySecrets = Invoke-RepositoryApi "$root/actions/secrets?per_page=100"
    if($repositorySecrets.total_count -ne 0) { throw 'Move repository-level secrets to protected environments or OIDC before setup.' }
    $runners = Invoke-RepositoryApi "$root/actions/runners?per_page=100"
@@ -199,7 +212,6 @@ function Invoke-GitHubRepositorySetup
       }
    }
    $operations = [System.Collections.Generic.List[hashtable]]::new()
-   $existingRuleDetails = @{}
    foreach($request in $Plan.Requests)
    {
       $operation = @{} + $request
@@ -211,7 +223,6 @@ function Invoke-GitHubRepositorySetup
          {
             $detail = Invoke-RepositoryApi "$root/rulesets/$($existing[0].id)"
             if(-not (Test-RepositoryValue $detail $request.Body)) { throw "Existing $($request.Body.name) differs; no ruleset will be replaced." }
-            $existingRuleDetails[$request.Body.name] = $detail
             continue
          }
       }
@@ -230,18 +241,9 @@ function Invoke-GitHubRepositorySetup
       $checks = Invoke-RepositoryApi "$root/commits/$CheckSha/check-runs?per_page=100"
       foreach($context in $Plan.Contexts)
       {
-         $check = @($checks.check_runs | Where-Object { $_.name -ceq $context -and $_.app.slug -eq 'github-actions' } |
+         $check = @($checks.check_runs | Where-Object { $_.name -ceq $context -and $_.app.slug -eq 'github-actions' -and $_.app.id -eq $actionsApp.id } |
                Sort-Object started_at -Descending | Select-Object -First 1)
          if($check.Count -ne 1 -or $check[0].conclusion -ne 'success') { throw "Bootstrap check not successful: $context. No settings were changed." }
-         $rule = $Plan.Requests[-2].Body.rules | Where-Object type -EQ 'required_status_checks'
-         ($rule.parameters.required_status_checks | Where-Object context -EQ $context).integration_id = $check[0].app.id
-      }
-      foreach($request in $Plan.Requests | Where-Object { $_.Path -eq "$root/rulesets" })
-      {
-         if($existingRuleDetails.ContainsKey($request.Body.name) -and -not (Test-RepositoryValue $existingRuleDetails[$request.Body.name] $request.Body))
-         {
-            throw "Existing $($request.Body.name) does not bind the successful check application. No settings were changed."
-         }
       }
       foreach($operation in $operations)
       {
