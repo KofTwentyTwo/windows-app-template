@@ -70,6 +70,9 @@ public sealed class AppSession : IDisposable
 
    public Window MainWindow { get; }
 
+   /// <summary>Observed mouse target and focus, retained in timeout diagnostics.</summary>
+   public string LastMouseInput { get; private set; } = "No physical input observed.";
+
 
 
    /// <summary>Text of every log file the app wrote so far.</summary>
@@ -185,11 +188,28 @@ public sealed class AppSession : IDisposable
    public void MouseClickElement(string automationId)
    {
       AutomationElement element = WaitForElement(automationId);
-      MainWindow.SetForeground();
       element.Focus();
       Wait.UntilInputIsProcessed();
+      WaitFor(
+         () =>
+         {
+            MainWindow.SetForeground();
+            if(!element.TryGetClickablePoint(out System.Drawing.Point point))
+            {
+               LastMouseInput = $"Expected PID={App.ProcessId}; target={automationId}; no clickable point.";
+               return null;
+            }
+            AutomationElement hit = Automation.FromPoint(point);
+            AutomationElement focused = Automation.FocusedElement();
+            int hitProcess = hit.Properties.ProcessId.ValueOrDefault;
+            string? hitId = hitProcess == App.ProcessId ? hit.Properties.AutomationId.ValueOrDefault : "outside app";
+            LastMouseInput = $"Expected PID={App.ProcessId}; target={automationId}; rectangle={element.BoundingRectangle}; point={point}; hit PID={hitProcess}; hit ID={hitId}; focus PID={focused.Properties.ProcessId.ValueOrDefault}; enabled={element.IsEnabled}; offscreen={element.IsOffscreen}.";
+            return hitProcess == App.ProcessId && element.IsEnabled && !element.IsOffscreen ? element : null;
+         },
+         $"an unobscured mouse target '{automationId}'");
       element.Click();
       Wait.UntilInputIsProcessed();
+      LastMouseInput += $" Mouse after={Mouse.Position}; hit PID={Automation.FromPoint(Mouse.Position).Properties.ProcessId.ValueOrDefault}.";
    }
 
 

@@ -61,9 +61,13 @@ A fresh GUI-only run passed both installed upgrades, restart, all four byte gate
 and nineteen UI checks. Each version preserved 532 original publish files in both
 archive formats. CLI attempts also passed every byte gate and the stable upgrade,
 but two installed UI suites timed out on input-driven checks; AppKit issue #23
-tracks that separate acceptance gap. Physical mouse input now focuses the target
-and waits for input processing before clicking; greeting failures include observed
-text and isolated app logs. Hosted CI and complete CLI acceptance remain required.
+tracks that separate acceptance gap. A published-output recurrence showed the
+crash button's clickable point belonged to Windows Terminal despite app keyboard
+focus. Physical input now waits until the app owns an unobscured clickable point,
+then clicks once. Results record process/point observations without unrelated
+window text; crash/greeting failures include isolated app state and logs. The
+guarded seven-case suite passed on the exact failed published executable, but
+hosted CI and complete CLI acceptance remain required.
 
 Original publish/archive corruption fixtures remain retained under AppKit
 issue #22. These successful staging checks do not establish their cause. Do not attribute

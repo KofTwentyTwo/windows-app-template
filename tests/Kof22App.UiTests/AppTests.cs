@@ -4,6 +4,7 @@
  */
 
 using FlaUI.Core.AutomationElements;
+using Xunit.Abstractions;
 
 
 namespace Kof22App.UiTests;
@@ -15,6 +16,15 @@ namespace Kof22App.UiTests;
 [Collection("Desktop")]
 public class AppTests
 {
+   private readonly ITestOutputHelper _output;
+
+
+
+   /// <summary>Records input observations in both passing and failing test results.</summary>
+   public AppTests(ITestOutputHelper output) => _output = output;
+
+
+
    /// <summary>Splash: shows, then dismisses itself.</summary>
    [Fact]
    public void Splash_ShowsThenDismissesItself()
@@ -45,10 +55,19 @@ public class AppTests
    public void UnhandledException_IsLoggedAndTheAppSurvives()
    {
       using var session = new AppSession();
-      session.MouseClickElement("ThrowButton");
-      session.WaitFor(
-         () => session.ReadLogs().Contains("Deliberately unhandled exception from the template", StringComparison.Ordinal) ? session.MainWindow : null,
-         "the crash net's log entry");
+      try
+      {
+         session.MouseClickElement("ThrowButton");
+         _output.WriteLine(session.LastMouseInput);
+         session.WaitFor(
+            () => session.ReadLogs().Contains("Deliberately unhandled exception from the template", StringComparison.Ordinal) ? session.MainWindow : null,
+            "the crash net's log entry");
+      }
+      catch(TimeoutException exception)
+      {
+         AutomationElement? status = session.FindInApp(cf => cf.ByAutomationId("StatusText"));
+         throw new TimeoutException($"{exception.Message} {session.LastMouseInput} Observed status: '{status?.Properties.Name.ValueOrDefault}'. App logs: {session.ReadLogs()}", exception);
+      }
       Assert.False(session.App.HasExited);
       Assert.Contains("Unhandled UI exception", session.ReadLogs(), StringComparison.Ordinal);
    }
@@ -110,7 +129,7 @@ public class AppTests
             () =>
             {
                AutomationElement? text = session.FindInApp(cf => cf.ByAutomationId("GreetingText"));
-               observedGreeting = text?.Name;
+               observedGreeting = text?.Properties.Name.ValueOrDefault;
                return observedGreeting?.EndsWith(", Ada!", StringComparison.Ordinal) == true ? text : null;
             },
             "the greeting");
