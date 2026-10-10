@@ -6,7 +6,7 @@
         "type": "Direct",
         "requested": "[0.1.0, )",
         "resolved": "0.1.0",
-        "contentHash": "PSYTJtj2PEwFbWnvGj6YviN5oR4YAjE84U3M2Lp3cGZHDv+M/Y61mwgiEF8rp6UM1iEC4BJTbRlA+l0jpQFsNw==",
+        "contentHash": "81vbwwOKoMtF7O423F8LYUTg8KjcyKQXqfqC6oWnRsQfDNQMgh+vaSKjmX6qmgvOAIY0dVsmu55TEpeRaJMGDw==",
         "dependencies": {
           "KofTwentyTwo.AppKit": "0.1.0",
           "Velopack": "1.2.161"
@@ -16,7 +16,7 @@
         "type": "Direct",
         "requested": "[0.1.0, )",
         "resolved": "0.1.0",
-        "contentHash": "+RR7vA0vK8iuomB50wc4P74i01BDPhd01nqJ1FyrwKEuhiK6MQItB0JC+byn4oRzE9z5uTiqQ//tU545NJnoRA==",
+        "contentHash": "TgIz7wROrZJoopQVZPay/PmDIyK6p8RrWRxUiOXlLUFMehKLwFAABm7WaUH+OOn6Jac6LjsNoWRW8CVGoWl9hg==",
         "dependencies": {
           "KofTwentyTwo.AppKit": "0.1.0",
           "KofTwentyTwo.AppKit.Updates": "0.1.0",
@@ -189,7 +189,7 @@
         "type": "CentralTransitive",
         "requested": "[0.1.0, )",
         "resolved": "0.1.0",
-        "contentHash": "V7JZsMLdbvEMFrnbmHbkTpc8Ky0CeYMlXMKgMIyZGAyoaNhI5bh9GcJdHAcKT1N7Dp1OUlrN0CO0cnLNWw7sMQ=="
+        "contentHash": "+ymM8DxPel+C527Cp7lrhhdu0xnGHb6fl4/5vAlzsd0iiyW8u+UiOfQl1paNxA26iQZTbxQ8fMLQsUnaOA8GcQ=="
       }
     },
     "net10.0-windows10.0.19041/win-arm64": {
