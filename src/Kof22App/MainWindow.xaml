@@ -26,7 +26,11 @@
             <ToggleMenuFlyoutItem x:Name="SplashToggle" Text="Show splash at startup" Click="Splash_Click" />
             <ToggleMenuFlyoutItem x:Name="UpdateCheckToggle" Text="Check for updates at startup" Click="UpdateCheck_Click" />
          </MenuBarItem>
-         <MenuBarItem Title="Help">
+         <MenuBarItem Title="Help" AccessKey="H">
+            <MenuFlyoutItem Text="View on GitHub" AccessKey="G" AutomationProperties.AutomationId="MenuGitHub" Click="GitHub_Click" />
+            <MenuFlyoutItem Text="Submit an issue…" AccessKey="I" AutomationProperties.AutomationId="MenuSubmitIssue" ToolTipService.ToolTip="Report a bug or request a feature on GitHub" Click="SubmitIssue_Click" />
+            <MenuFlyoutItem Text="Community support…" AccessKey="S" AutomationProperties.AutomationId="MenuCommunitySupport" ToolTipService.ToolTip="Ask a question or share tips in GitHub Discussions" Click="CommunitySupport_Click" />
+            <MenuFlyoutSeparator />
             <MenuFlyoutItem x:Name="CheckForUpdatesMenuItem" Text="Check for updates" Click="CheckForUpdates_Click" />
             <MenuFlyoutItem x:Name="ActivityLogMenuItem" Text="Activity log" Click="ActivityLog_Click" />
             <MenuFlyoutSeparator />

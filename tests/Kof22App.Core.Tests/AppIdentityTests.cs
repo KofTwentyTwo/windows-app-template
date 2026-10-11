@@ -20,6 +20,8 @@ public class AppIdentityTests
       Assert.EndsWith("_DATA_DIR", AppIdentity.Info.DataDirectoryVariable, StringComparison.Ordinal);
       Assert.NotNull(AppIdentity.Info.RepositoryUrl);
       Assert.NotEmpty(AppIdentity.Info.Attributions);
+      Assert.Equal("https://github.com/KofTwentyTwo/windows-app-template/issues/new/choose", AppIdentity.IssuesUrl.AbsoluteUri);
+      Assert.Equal("https://github.com/KofTwentyTwo/windows-app-template/discussions", AppIdentity.SupportUrl.AbsoluteUri);
    }
 
 

@@ -7,6 +7,13 @@ repository files, and the shared CI, security, and release workflows. It impleme
 
 This file is not copied into generated apps.
 
+## Default Help menu
+
+Generated apps include gclo's repository, issue-template and community-support
+commands. Their URLs use the generated `AppInfo.RepositoryUrl`, so `--owner` and
+`-n` point to the new project. Repository setup enables and validates GitHub
+Discussions; this is required for Community support to work.
+
 ## Create an app
 
 ```powershell
