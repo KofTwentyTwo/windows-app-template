@@ -47,6 +47,21 @@ Describe 'Required checks match standalone workflow jobs' `
 
 Describe 'Generated repository administration' `
 {
+   It 'allows the digest-pinned security containers without permitting arbitrary container actions' `
+   {
+      $plan = Get-GitHubRepositoryPlan -Repository 'Example/Notes'
+      $policy = ($plan.Requests | Where-Object Path -Like '*/actions/permissions/selected-actions').Body
+      $policy.patterns_allowed.Count | Should -Be 3
+      $policy.patterns_allowed | Should -Contain 'KofTwentyTwo/standards/*@*'
+      $containers = @($policy.patterns_allowed | Where-Object { $_.StartsWith('docker://', [StringComparison]::Ordinal) })
+      $containers.Count | Should -Be 2
+      foreach($container in $containers)
+      {
+         $container | Should -Match '^docker://ghcr\.io/(gitleaks/gitleaks:v8\.30\.1|aquasecurity/trivy:0\.75\.0)@sha256:[0-9a-f]{64}$'
+         $container | Should -Not -Match '\*'
+      }
+   }
+
    InModuleScope GitHubRepository `
    {
       BeforeEach `

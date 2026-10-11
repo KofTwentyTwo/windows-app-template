@@ -66,6 +66,12 @@ and environment protections are retained. API failures stop immediately; earlier
 successful requests may remain, so validate and resolve the reported failure before
 rerunning. The tool never creates repositories, pushes, merges, tags or releases.
 
+The selected Actions policy permits the shared standards workflows, GitHub-owned
+and verified actions, and the exact digest-pinned Gitleaks/Trivy container actions
+used by the published security builder. GitHub also checks container actions
+against this policy; missing entries prevent the security workflow from starting.
+Review these exact references whenever the shared builder pin changes.
+
 ## Finish and verify
 
 Register ownership/tier in the standards `MAINTAINERS.md` inventory through a
