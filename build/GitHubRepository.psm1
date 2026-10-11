@@ -74,7 +74,14 @@ function Get-GitHubRepositoryPlan
       @{ Method = 'PUT'; Path = "$root/actions/permissions/workflow"; Body = @{ default_workflow_permissions = 'read'; can_approve_pull_request_reviews = $false } },
       @{ Method = 'PUT'; Path = "$root/actions/permissions/fork-pr-contributor-approval"; Body = @{ approval_policy = 'all_external_contributors' } },
       @{ Method = 'PUT'; Path = "$root/actions/permissions"; Body = @{ enabled = $true; allowed_actions = 'selected' } },
-      @{ Method = 'PUT'; Path = "$root/actions/permissions/selected-actions"; Body = @{ github_owned_allowed = $true; verified_allowed = $true; patterns_allowed = @('KofTwentyTwo/standards/*@*') } },
+      @{ Method = 'PUT'; Path = "$root/actions/permissions/selected-actions"; Body = @{
+            github_owned_allowed = $true; verified_allowed = $true
+            # Exact container actions used by the published v0.1.2 security builder.
+            patterns_allowed = @('KofTwentyTwo/standards/*@*',
+               'docker://ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f',
+               'docker://ghcr.io/aquasecurity/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa')
+         }
+      },
       @{ Method = 'PUT'; Path = "$root/environments/release"; Body = @{ deployment_branch_policy = @{ protected_branches = $false; custom_branch_policies = $true } } },
       @{ Method = 'POST'; Path = "$root/environments/release/deployment-branch-policies"; Body = @{ name = 'v*'; type = 'tag' } },
       @{ Method = 'POST'; Path = "$root/rulesets"; Body = $main },

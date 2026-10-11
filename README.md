@@ -61,6 +61,8 @@ Prerequisites:
 - Optionally Visual Studio 2026 (Windows App SDK workload) or Rider
 
 ```powershell
+# Once after generation, create and commit the NuGet locks locally:
+# dotnet restore Kof22App.slnx -p:Platform=x64
 dotnet restore Kof22App.slnx -p:Platform=x64 --locked-mode
 dotnet build Kof22App.slnx -p:Platform=x64 -warnaserror
 dotnet test Kof22App.slnx -p:Platform=x64 --no-build --filter "FullyQualifiedName!~UiTests"
