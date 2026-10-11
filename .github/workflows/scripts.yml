@@ -54,7 +54,12 @@ jobs:
           # Analyze each file separately: recursive analysis can crash inside 1.25.0.
           foreach($script in Get-ChildItem -LiteralPath build -Recurse -File | Where-Object Extension -In '.ps1', '.psm1', '.psd1')
           {
-             $findings = @(Invoke-ScriptAnalyzer -Path $script.FullName -Settings ./PSScriptAnalyzerSettings.psd1)
+             # Run casing separately: the combined analyzer pass crashes in 1.25.0.
+             # Both passes together retain every configured rule and severity.
+             $findings = @(
+                Invoke-ScriptAnalyzer -Path $script.FullName -Settings ./PSScriptAnalyzerSettings.psd1 -IncludeRule PSUseCorrectCasing
+                Invoke-ScriptAnalyzer -Path $script.FullName -Settings ./PSScriptAnalyzerSettings.psd1 -ExcludeRule PSUseCorrectCasing
+             )
              if($findings.Count -gt 0) { $findings | Format-Table; throw "Script analysis failed: $($script.Name)" }
           }
       - name: Verify script boundary tests
