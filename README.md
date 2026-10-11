@@ -43,6 +43,7 @@ The command-line tool ships in each release as a self-contained single-file
   startup update check on or off. Choices are saved immediately.
 - **Help → Activity log:** a live view of the app's log, with an errors-only filter and a
   shortcut to the log folder.
+- **Help → View on GitHub / Submit an issue… / Community support…:** this app's repository, bug/feature templates and GitHub Discussions.
 - **Help → Check for updates** and **Help → About**.
 <!--#if (cli) -->
 - **Command line:** `kof22-app greet --name Ada`, `kof22-app --version`, `kof22-app --help`.

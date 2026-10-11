@@ -151,7 +151,12 @@ public sealed class AppSession : IDisposable
    /// expand (its flyout opens before the menu is ready), so the menu is re-opened
    /// until the item appears.
    /// </summary>
-   public void InvokeMenuItem(string menuName, string itemAutomationId)
+   public void InvokeMenuItem(string menuName, string itemAutomationId) => Invoke(OpenMenuItem(menuName, itemAutomationId));
+
+
+
+   /// <summary>Opens an owned native menu and returns its item without launching an external destination.</summary>
+   public AutomationElement OpenMenuItem(string menuName, string itemAutomationId)
    {
       MainWindow.SetForeground();
       AutomationElement menu = WaitFor(
@@ -171,7 +176,7 @@ public sealed class AppSession : IDisposable
          Wait.UntilInputIsProcessed();
          item = Retry.WhileNull(() => FindInApp(cf => cf.ByAutomationId(itemAutomationId)), timeout: TimeSpan.FromSeconds(3), interval: s_pollInterval, ignoreException: true).Result;
       }
-      Invoke(item ?? throw new TimeoutException($"Menu item '{itemAutomationId}' never appeared under '{menuName}'. (app exited: {App.HasExited})"));
+      return item ?? throw new TimeoutException($"Menu item '{itemAutomationId}' never appeared under '{menuName}'. (app exited: {App.HasExited})");
    }
 
 

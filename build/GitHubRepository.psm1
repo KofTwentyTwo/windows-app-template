@@ -60,7 +60,7 @@ function Get-GitHubRepositoryPlan
       @{ Method = 'PATCH'; Path = $root; Body = @{
             allow_squash_merge = $true; allow_merge_commit = $false; allow_rebase_merge = $false
             squash_merge_commit_title = 'PR_TITLE'; squash_merge_commit_message = 'PR_BODY'
-            delete_branch_on_merge = $true; has_issues = $true; has_wiki = $false
+            delete_branch_on_merge = $true; has_issues = $true; has_discussions = $true; has_wiki = $false
             homepage              = "https://github.com/$Repository#readme"
             security_and_analysis = @{
                secret_scanning = @{ status = 'enabled' }; secret_scanning_push_protection = @{ status = 'enabled' }

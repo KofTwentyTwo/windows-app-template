@@ -135,6 +135,16 @@ Describe 'Generated repository administration' `
          @($script:Writes | Where-Object { $_ -match 'POST|environments/release$' }).Count | Should -Be 0
       }
 
+      It 'requires community Discussions and detects disabled support without writing' `
+      {
+         Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) -Confirm:$false
+         $script:State[$script:Root].has_discussions | Should -BeTrue
+         $script:State[$script:Root].has_discussions = $false
+         $script:Writes.Clear()
+         { Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Validate } | Should -Throw '*Configuration mismatch: repos/Example/Notes*'
+         $script:Writes.Count | Should -Be 0
+      }
+
       It 'previews all mutations without writing' `
       {
          Invoke-GitHubRepositorySetup -Plan $script:Plan -Mode Apply -CheckSha ('a' * 40) -WhatIf
