@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   pr:
-    uses: KofTwentyTwo/standards/.github/workflows/pr.yml@fdf5ed029603c938615a32b1beca3628b8787945 # v0.1.2
+    uses: KofTwentyTwo/standards/.github/workflows/pr.yml@96cbdf208a15c9c524676bd15ff9e323228a952b # v1.1.1
     permissions:
       contents: read      # read the commits being merged
       pull-requests: read # read the pull request title and dependency diff
