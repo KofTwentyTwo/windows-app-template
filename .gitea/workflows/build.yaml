@@ -18,7 +18,7 @@ jobs:
         Remove-Item Env:Platform
         dotnet test tests/Kof22App.Core.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
         dotnet test tests/Kof22App.Cli.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
-        ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages Kof22App.Core,kof22-app
+        pwsh -NoProfile -File ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages Kof22App.Core,kof22-app
         # Template: pack, install into a private hive, instantiate with and without the CLI, then build, format, test and gate coverage.
         $temp = $env:RUNNER_TEMP ?? [IO.Path]::GetTempPath()
         $hive = Join-Path $temp "template-hive-$env:GITHUB_RUN_ID"
@@ -35,7 +35,7 @@ jobs:
           if ($cli -eq 'true') {
             dotnet test "$directory/tests/$name.Cli.Tests" --no-build --settings "$directory/coverage.runsettings" --collect:'XPlat Code Coverage' --results-directory "$directory/TestResults"
           }
-          & "$directory/build/Assert-Coverage.ps1" -ResultsDirectory "$directory/TestResults"
+          pwsh -NoProfile -File "$directory/build/Assert-Coverage.ps1" -ResultsDirectory "$directory/TestResults"
         }
         # PowerShell build scripts: analyzer and Pester boundary tests with pinned modules saved to the job's temp directory.
         $modules = Join-Path $temp "psmodules-$env:GITHUB_RUN_ID"
