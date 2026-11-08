@@ -1,0 +1,66 @@
+name: build
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+jobs:
+  windows:
+    uses: self:KofTwentyTwo/ci-workflows/.gitea/workflows/windows.yaml@v1
+    secrets: inherit
+    with:
+      commands: |
+        dotnet restore Kof22App.slnx -p:Platform=x64 --locked-mode
+        dotnet build Kof22App.slnx -p:Platform=x64 -warnaserror --no-restore
+        # The WinUI app project is built directly so the format workspace can load its generated XAML code.
+        dotnet build src/Kof22App/Kof22App.csproj -p:Platform=x64 -warnaserror --no-restore
+        $env:Platform = 'x64'
+        dotnet format Kof22App.slnx --verify-no-changes --severity warn --no-restore
+        Remove-Item Env:Platform
+        dotnet test tests/Kof22App.Core.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+        dotnet test tests/Kof22App.Cli.Tests --no-build --settings coverage.runsettings --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+        pwsh -NoProfile -File ./build/Assert-Coverage.ps1 -ResultsDirectory TestResults -Packages Kof22App.Core,kof22-app
+        # Template: pack, install into a private hive, instantiate with and without the CLI, then build, format, test and gate coverage.
+        $temp = $env:RUNNER_TEMP ?? [IO.Path]::GetTempPath()
+        $hive = Join-Path $temp "template-hive-$env:GITHUB_RUN_ID"
+        dotnet pack templates/KofTwentyTwo.Templates.WindowsApp.csproj -c Release -p:Version=0.1.0 -p:RestoreLockedMode=true -o artifacts/template
+        dotnet new install artifacts/template/KofTwentyTwo.Templates.WindowsApp.0.1.0.nupkg --debug:custom-hive $hive
+        foreach ($cli in 'true', 'false') {
+          $directory = "artifacts/template-probe-$cli"
+          $name = if ($cli -eq 'true') { 'TemplateProbe.WithCli' } else { 'TemplateProbe.NoCli' }
+          dotnet new k22-winapp -n $name --appId "probe-$cli" --displayName "Probe $cli" --cli $cli -o $directory --debug:custom-hive $hive
+          dotnet restore "$directory/$name.slnx" -p:Platform=x64 --locked-mode
+          dotnet build "$directory/$name.slnx" -p:Platform=x64 -warnaserror --no-restore
+          dotnet format "$directory/$name.slnx" --verify-no-changes --severity warn --no-restore
+          dotnet test "$directory/tests/$name.Core.Tests" --no-build --settings "$directory/coverage.runsettings" --collect:'XPlat Code Coverage' --results-directory "$directory/TestResults"
+          if ($cli -eq 'true') {
+            dotnet test "$directory/tests/$name.Cli.Tests" --no-build --settings "$directory/coverage.runsettings" --collect:'XPlat Code Coverage' --results-directory "$directory/TestResults"
+          }
+          pwsh -NoProfile -File "$directory/build/Assert-Coverage.ps1" -ResultsDirectory "$directory/TestResults"
+        }
+        # PowerShell build scripts: analyzer and Pester boundary tests with pinned modules saved to the job's temp directory.
+        $modules = Join-Path $temp "psmodules-$env:GITHUB_RUN_ID"
+        New-Item -ItemType Directory -Force -Path $modules | Out-Null
+        Save-PSResource -Name PSScriptAnalyzer -Version 1.25.0 -Repository PSGallery -TrustRepository -Path $modules
+        Save-PSResource -Name Pester -Version 5.7.1 -Repository PSGallery -TrustRepository -Path $modules
+        Import-Module (Join-Path $modules PSScriptAnalyzer/1.25.0/PSScriptAnalyzer.psd1)
+        Import-Module (Join-Path $modules Pester/5.7.1/Pester.psd1)
+        foreach ($file in Get-ChildItem -LiteralPath build -Recurse -File | Where-Object Extension -In '.ps1', '.psm1', '.psd1') {
+          # One file at a time: recursive analysis can crash inside 1.25.0.
+          $findings = @(Invoke-ScriptAnalyzer -Path $file.FullName -Settings ./PSScriptAnalyzerSettings.psd1)
+          if ($findings.Count -gt 0) { $findings | Format-Table; throw "Script analysis failed: $($file.Name)" }
+        }
+        # The Pester suites assert on child processes' exit codes themselves.
+        $PSNativeCommandUseErrorActionPreference = $false
+        $pester = New-PesterConfiguration
+        $pester.Run.Path = @('build/Assert-Coverage.Tests.ps1', 'build/GitHubRepository.Tests.ps1', 'build/Distribution.Tests.ps1', 'build/InstalledUpdates.Tests.ps1', 'build/PackageBytes.Tests.ps1', 'build/ReleaseSigning.Tests.ps1')
+        $pester.Run.PassThru = $true
+        if ((Invoke-Pester -Configuration $pester).Result -ne 'Passed') { throw 'Pester tests failed' }
+  scripts:
+    uses: self:KofTwentyTwo/ci-workflows/.gitea/workflows/node.yaml@v1
+    with:
+      node-version: '24'
+      install: npm ci --ignore-scripts
+      commands: |
+        npm run lint
+        npm test
+        npm audit signatures
